@@ -1,89 +1,452 @@
 <!DOCTYPE html>
-<html>
-  <head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Welcome to Firebase Hosting</title>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>バンドマッチ</title>
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+    import { getFirestore, collection, addDoc, onSnapshot, doc, deleteDoc, updateDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
-    <!-- update the version number as needed -->
-    <script defer src="/__/firebase/11.6.0/firebase-app-compat.js"></script>
-    <!-- include only the Firebase features as you need -->
-    <script defer src="/__/firebase/11.6.0/firebase-auth-compat.js"></script>
-    <script defer src="/__/firebase/11.6.0/firebase-database-compat.js"></script>
-    <script defer src="/__/firebase/11.6.0/firebase-firestore-compat.js"></script>
-    <script defer src="/__/firebase/11.6.0/firebase-functions-compat.js"></script>
-    <script defer src="/__/firebase/11.6.0/firebase-messaging-compat.js"></script>
-    <script defer src="/__/firebase/11.6.0/firebase-storage-compat.js"></script>
-    <script defer src="/__/firebase/11.6.0/firebase-analytics-compat.js"></script>
-    <script defer src="/__/firebase/11.6.0/firebase-remote-config-compat.js"></script>
-    <script defer src="/__/firebase/11.6.0/firebase-performance-compat.js"></script>
-    <!-- 
-      initialize the SDK after all desired features are loaded, set useEmulator to false
-      to avoid connecting the SDK to running emulators.
-    -->
-    <script defer src="/__/firebase/init.js?useEmulator=true"></script>
+    // Firebaseの設定
+    const firebaseConfig = {
+      apiKey: "AIzaSyDe8W8YUhedHUesbZwGQWLKAA7Yz2mDmWI",
+      authDomain: "bandmatch-877.firebaseapp.com",
+      projectId: "bandmatch-877",
+      storageBucket: "bandmatch-877.firebasestorage.app",
+      messagingSenderId: "338150052178",
+      appId: "1:338150052178:web:6338b33129d515e2a06a8b",
+      measurementId: "G-PND9Z1DJZD"
+    };
 
-    <style media="screen">
-      body { background: #ECEFF1; color: rgba(0,0,0,0.87); font-family: Roboto, Helvetica, Arial, sans-serif; margin: 0; padding: 0; }
-      #message { background: white; max-width: 360px; margin: 100px auto 16px; padding: 32px 24px; border-radius: 3px; }
-      #message h2 { color: #ffa100; font-weight: bold; font-size: 16px; margin: 0 0 8px; }
-      #message h1 { font-size: 22px; font-weight: 300; color: rgba(0,0,0,0.6); margin: 0 0 16px;}
-      #message p { line-height: 140%; margin: 16px 0 24px; font-size: 14px; }
-      #message a { display: block; text-align: center; background: #039be5; text-transform: uppercase; text-decoration: none; color: white; padding: 16px; border-radius: 4px; }
-      #message, #message a { box-shadow: 0 1px 3px rgba(0,0,0,0.12), 0 1px 2px rgba(0,0,0,0.24); }
-      #load { color: rgba(0,0,0,0.4); text-align: center; font-size: 13px; }
-      @media (max-width: 600px) {
-        body, #message { margin-top: 0; background: white; box-shadow: none; }
-        body { border-top: 16px solid #ffa100; }
-      }
-    </style>
-  </head>
-  <body>
-    <div id="message">
-      <h2>Welcome</h2>
-      <h1>Firebase Hosting Setup Complete</h1>
-      <p>You're seeing this because you've successfully setup Firebase Hosting. Now it's time to go build something extraordinary!</p>
-      <a target="_blank" href="https://firebase.google.com/docs/hosting/">Open Hosting Documentation</a>
-    </div>
-    <p id="load">Firebase SDK Loading&hellip;</p>
+    // Firebaseアプリの初期化とFirestoreの取得
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
 
-    <script>
-      document.addEventListener('DOMContentLoaded', function() {
-        const loadEl = document.querySelector('#load');
-        // // 🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥
-        // // The Firebase SDK is initialized and available here!
-        //
-        // firebase.auth().onAuthStateChanged(user => { });
-        // firebase.database().ref('/path/to/ref').on('value', snapshot => { });
-        // firebase.firestore().doc('/foo/bar').get().then(() => { });
-        // firebase.functions().httpsCallable('yourFunction')().then(() => { });
-        // firebase.messaging().requestPermission().then(() => { });
-        // firebase.storage().ref('/path/to/ref').getDownloadURL().then(() => { });
-        // firebase.analytics(); // call to activate
-        // firebase.analytics().logEvent('tutorial_completed');
-        // firebase.performance(); // call to activate
-        //
-        // // 🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥
+    document.addEventListener("DOMContentLoaded", async function () {
+      const projectForm = document.getElementById("projectForm");
+      const projectList = document.getElementById("projectList");
+      const tabs = document.querySelectorAll('.tab');
+      const tabContents = document.querySelectorAll('.tab-content');
 
-        try {
-          let app = firebase.app();
-          let features = [
-            'auth', 
-            'database', 
-            'firestore',
-            'functions',
-            'messaging', 
-            'storage', 
-            'analytics', 
-            'remoteConfig',
-            'performance',
-          ].filter(feature => typeof app[feature] === 'function');
-          loadEl.textContent = `Firebase SDK loaded with ${features.join(', ')}`;
-        } catch (e) {
-          console.error(e);
-          loadEl.textContent = 'Error loading the Firebase SDK, check the console.';
-        }
+      // タブ切り替え
+      tabs.forEach(tab => {
+        tab.addEventListener('click', () => {
+          const target = tab.dataset.target;
+          
+          tabs.forEach(t => t.classList.remove('active'));
+          tabContents.forEach(content => content.classList.remove('active'));
+          
+          tab.classList.add('active');
+          document.getElementById(target).classList.add('active');
+        });
       });
-    </script>
-  </body>
+
+      // Firestoreからプロジェクトをリアルタイムで取得
+      function loadProjects() {
+        onSnapshot(collection(db, "projects"), (snapshot) => {
+          projectList.innerHTML = "";
+          snapshot.forEach((docSnapshot) => {
+            const project = docSnapshot.data();
+            displayProject(docSnapshot.id, project);
+          });
+        });
+      }
+
+      // プロジェクトの表示
+      function displayProject(id, project) {
+        const projectBlock = document.createElement("div");
+        projectBlock.classList.add("project-block");
+        projectBlock.dataset.id = id;
+        projectBlock.dataset.password = project.password;
+
+        projectBlock.innerHTML = `
+          <h3>${project.songName}</h3>
+          <div class="project-info">
+            <p><i class="fas fa-calendar"></i> ライブ日: ${project.liveDate}</p>
+            <p><i class="fas fa-music"></i> 募集楽器: ${project.instruments || "なし"}</p>
+          </div>
+          <div class="project-actions">
+            <button class="edit-btn"><i class="fas fa-edit"></i> 編集</button>
+            <button class="delete-btn"><i class="fas fa-trash"></i> 削除</button>
+          </div>
+        `;
+
+        // 削除処理
+        projectBlock.querySelector(".delete-btn").addEventListener("click", async function () {
+          const inputPassword = prompt("パスワードを入力してください:");
+          if (inputPassword === project.password) {
+            await deleteDoc(doc(db, "projects", id));
+          } else {
+            alert("パスワードが違います。");
+          }
+        });
+
+        // 編集処理
+        projectBlock.querySelector(".edit-btn").addEventListener("click", async function () {
+          const inputPassword = prompt("パスワードを入力してください:");
+          if (inputPassword === project.password) {
+            const newSongName = prompt("新しい曲名:", project.songName);
+            const newLiveDate = prompt("新しいライブ日:", project.liveDate);
+            const newInstruments = prompt("新しい募集楽器（カンマ区切りで入力）:", project.instruments);
+
+            if (newSongName && newLiveDate) {
+              await updateDoc(doc(db, "projects", id), {
+                songName: newSongName,
+                liveDate: newLiveDate,
+                instruments: newInstruments
+              });
+            }
+          } else {
+            alert("パスワードが違います。");
+          }
+        });
+
+        projectList.appendChild(projectBlock);
+      }
+
+      // プロジェクトの追加処理
+      projectForm.addEventListener("submit", async function (event) {
+        event.preventDefault();
+        const songName = document.getElementById("songName").value;
+        const liveDate = document.getElementById("liveDate").value;
+        const password = document.getElementById("password").value;
+
+        // 選択された楽器を取得
+        const selectedInstruments = Array.from(document.querySelectorAll('input[name="instrument"]:checked'))
+          .map(checkbox => checkbox.value)
+          .join(", ");
+
+        if (songName.trim() === "" || liveDate.trim() === "" || password.trim() === "") {
+          alert("すべての項目を入力してください。");
+          return;
+        }
+
+        await addDoc(collection(db, "projects"), {
+          songName,
+          liveDate,
+          instruments: selectedInstruments,
+          password
+        });
+
+        projectForm.reset();
+        alert("プロジェクトが追加されました！");
+      });
+
+      loadProjects();
+    });
+  </script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    :root {
+      --primary: #8B2252; /* えんじ色 */
+      --secondary: #A6567A;
+      --light: #F8E7EF;
+      --dark: #3E1025;
+      --gray: #f0f0f0;
+      --white: #ffffff;
+    }
+    body {
+      font-family: 'Helvetica Neue', Arial, sans-serif;
+      background-color: var(--light);
+      padding: 0;
+      color: #333;
+      line-height: 1.6;
+    }
+    header {
+      background-color: var(--primary);
+      color: var(--white);
+      padding: 20px 0;
+      text-align: center;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    }
+    .container {
+      max-width: 900px;
+      margin: 20px auto;
+      padding: 0 20px;
+    }
+    .tabs {
+      display: flex;
+      margin-bottom: 20px;
+      border-bottom: 1px solid var(--gray);
+    }
+    .tab {
+      padding: 10px 20px;
+      cursor: pointer;
+      border-radius: 5px 5px 0 0;
+      transition: all 0.3s ease;
+    }
+    .tab.active {
+      background-color: var(--primary);
+      color: var(--white);
+    }
+    .tab-content {
+      display: none;
+      background-color: var(--white);
+      border-radius: 0 0 8px 8px;
+      padding: 20px;
+      box-shadow: 0 4px 8px rgba(0,0,0,0.05);
+    }
+    .tab-content.active {
+      display: block;
+    }
+    h1, h2, h3 {
+      color: var(--dark);
+    }
+    .create-form {
+      background-color: var(--white);
+      border-radius: 8px;
+      padding: 25px;
+      margin-bottom: 30px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+    }
+    .form-group {
+      margin-bottom: 20px;
+    }
+    label {
+      display: block;
+      margin-bottom: 8px;
+      font-weight: 600;
+      color: var(--dark);
+    }
+    input[type="text"], input[type="date"], input[type="password"] {
+      width: 100%;
+      padding: 10px;
+      border: 1px solid #ddd;
+      border-radius: 5px;
+      font-size: 16px;
+    }
+    .instrument-options {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-top: 10px;
+    }
+    .instrument-option {
+      display: flex;
+      align-items: center;
+      margin-right: 15px;
+    }
+    .btn {
+      padding: 12px 24px;
+      background-color: var(--primary);
+      color: var(--white);
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      font-size: 16px;
+      font-weight: 600;
+      transition: all 0.3s ease;
+      display: inline-block;
+    }
+    .btn:hover {
+      background-color: var(--secondary);
+      transform: translateY(-2px);
+    }
+    .project-block {
+      border-radius: 8px;
+      padding: 20px;
+      margin-bottom: 20px;
+      background-color: var(--white);
+      box-shadow: 0 3px 10px rgba(0,0,0,0.05);
+      transition: all 0.3s ease;
+      border-left: 5px solid var(--primary);
+    }
+    .project-block:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+    }
+    .project-block h3 {
+      color: var(--primary);
+      margin-bottom: 10px;
+      font-size: 1.3rem;
+    }
+    .project-info {
+      margin-bottom: 15px;
+    }
+    .project-info p {
+      margin-bottom: 5px;
+      color: #555;
+    }
+    .project-actions {
+      display: flex;
+      gap: 10px;
+    }
+    .edit-btn, .delete-btn {
+      padding: 8px 12px;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 14px;
+      transition: all 0.3s ease;
+    }
+    .edit-btn {
+      background-color: var(--secondary);
+      color: white;
+    }
+    .delete-btn {
+      background-color: #d9534f;
+      color: white;
+    }
+    .footer {
+      background-color: var(--dark);
+      color: var(--white);
+      text-align: center;
+      padding: 20px;
+      margin-top: 40px;
+    }
+    .policy-content, .faq-content {
+      background-color: var(--white);
+      border-radius: 8px;
+      padding: 25px;
+      margin-bottom: 30px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+    }
+    .faq-item {
+      margin-bottom: 20px;
+    }
+    .faq-question {
+      font-weight: bold;
+      color: var(--primary);
+      margin-bottom: 10px;
+    }
+    /* レスポンシブ対応 */
+    @media (max-width: 768px) {
+      .container {
+        padding: 0 15px;
+      }
+      .tabs {
+        flex-direction: column;
+      }
+      .tab {
+        width: 100%;
+        text-align: center;
+      }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>バンドプロジェクト管理</h1>
+  </header>
+  
+  <div class="container">
+    <div class="tabs">
+      <div class="tab active" data-target="projects-tab">プロジェクト</div>
+      <div class="tab" data-target="policy-tab">プライバシーポリシー</div>
+      <div class="tab" data-target="faq-tab">FAQ</div>
+    </div>
+    
+    <div id="projects-tab" class="tab-content active">
+      <div class="create-form">
+        <h2><i class="fas fa-guitar"></i> 新規プロジェクト作成</h2>
+        <form id="projectForm">
+          <div class="form-group">
+            <label for="songName">曲名:</label>
+            <input type="text" id="songName" required placeholder="例: 紅">
+          </div>
+          <div class="form-group">
+            <label for="liveDate">ライブ日:</label>
+            <input type="date" id="liveDate" required>
+          </div>
+          <div class="form-group">
+            <label>募集楽器:</label>
+            <div class="instrument-options">
+              <div class="instrument-option">
+                <input type="checkbox" id="guitar" name="instrument" value="ギター">
+                <label for="guitar">ギター</label>
+              </div>
+              <div class="instrument-option">
+                <input type="checkbox" id="keyboard" name="instrument" value="キーボード">
+                <label for="keyboard">キーボード</label>
+              </div>
+              <div class="instrument-option">
+                <input type="checkbox" id="bass" name="instrument" value="ベース">
+                <label for="bass">ベース</label>
+              </div>
+              <div class="instrument-option">
+                <input type="checkbox" id="cajon" name="instrument" value="カホン">
+                <label for="cajon">カホン</label>
+              </div>
+              <div class="instrument-option">
+                <input type="checkbox" id="violin" name="instrument" value="ヴァイオリン">
+                <label for="violin">ヴァイオリン</label>
+              </div>
+              <div class="instrument-option">
+                <input type="checkbox" id="flute" name="instrument" value="フルート">
+                <label for="flute">フルート</label>
+              </div>
+              <div class="instrument-option">
+                <input type="checkbox" id="trumpet" name="instrument" value="トランペット">
+                <label for="trumpet">トランペット</label>
+              </div>
+            </div>
+          </div>
+          <div class="form-group">
+            <label for="password">パスワード (編集・削除用):</label>
+            <input type="password" id="password" required placeholder="パスワードを設定してください">
+          </div>
+          <button type="submit" class="btn"><i class="fas fa-plus-circle"></i> プロジェクト追加</button>
+        </form>
+      </div>
+      
+      <h2><i class="fas fa-list"></i> プロジェクト一覧</h2>
+      <div id="projectList"></div>
+    </div>
+    
+    <div id="policy-tab" class="tab-content">
+      <div class="policy-content">
+        <h2>プライバシーポリシー</h2>
+        <p>当サイトにおけるプライバシーポリシーについて説明します。</p>
+        
+        <h3>1. 収集する情報</h3>
+        <p>当サイトでは、プロジェクト情報（曲名、ライブ日、募集楽器）とパスワードを収集します。個人を特定できる情報は収集しておりません。</p>
+        
+        <h3>2. 情報の利用目的</h3>
+        <p>収集した情報は、バンドプロジェクト管理サービスの提供のみに使用されます。第三者への提供は行いません。</p>
+        
+        <h3>3. データの保護</h3>
+        <p>入力されたパスワードは、プロジェクトの編集・削除の認証のみに使用されます。安全なパスワードの設定をお願いします。</p>
+        
+        <h3>4. Cookie等の使用</h3>
+        <p>当サイトではFirebaseのサービスを使用しており、その過程でCookieが使用される場合があります。</p>
+        
+        <h3>5. お問い合わせ</h3>
+        <p>プライバシーポリシーに関するお問い合わせは、下部のお問い合わせ先までご連絡ください。</p>
+      </div>
+    </div>
+    
+    <div id="faq-tab" class="tab-content">
+      <div class="faq-content">
+        <h2>よくある質問</h2>
+        
+        <div class="faq-item">
+          <div class="faq-question">Q: プロジェクトはどのように作成すればいいですか？</div>
+          <div class="faq-answer">A: プロジェクトタブで曲名、ライブ日、募集楽器を選択し、パスワードを設定してプロジェクト追加ボタンをクリックしてください。</div>
+        </div>
+        
+        <div class="faq-item">
+          <div class="faq-question">Q: パスワードを忘れてしまった場合はどうすればいいですか？</div>
+          <div class="faq-answer">A: 残念ながら、パスワードを忘れた場合、プロジェクトの編集・削除はできません。パスワードはメモなどに控えておくことをお勧めします。</div>
+        </div>
+        
+        <div class="faq-item">
+          <div class="faq-question">Q: 複数の楽器を募集することはできますか？</div>
+          <div class="faq-answer">A: はい、複数の楽器にチェックを入れることで、複数の楽器を募集できます。</div>
+        </div>
+        
+        <div class="faq-item">
+          <div class="faq-question">Q: 一度追加したプロジェクトを編集するにはどうすればいいですか？</div>
+          <div class="faq-answer">A: プロジェクト一覧から該当のプロジェクトの「編集」ボタンをクリックし、設定したパスワードを入力すると編集できます。</div>
+        </div>
+      </div>
+    </div>
+  </div>
+  
+  <footer class="footer">
+    <p>&copy; 2025 バンドプロジェクト管理. All Rights Reserved.</p>
+    <p>お問い合わせ: contact@bandproject.example.com</p>
+  </footer>
+</body>
 </html>
