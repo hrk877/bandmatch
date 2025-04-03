@@ -26,25 +26,35 @@
     document.addEventListener("DOMContentLoaded", async function () {
       const projectForm = document.getElementById("projectForm");
       const projectList = document.getElementById("projectList");
-      const tabs = document.querySelectorAll('.tab');
-      const tabContents = document.querySelectorAll('.tab-content');
+      const footerLinks = document.querySelectorAll('.footer-link');
 
-      // タブ切り替え
-      tabs.forEach(tab => {
-        tab.addEventListener('click', () => {
-          const target = tab.dataset.target;
-          
-          tabs.forEach(t => t.classList.remove('active'));
-          tabContents.forEach(content => content.classList.remove('active'));
-          
-          tab.classList.add('active');
-          document.getElementById(target).classList.add('active');
+      // フッターリンクのイベントリスナー
+      footerLinks.forEach(link => {
+        link.addEventListener('click', (e) => {
+          e.preventDefault();
+          const target = link.getAttribute('href').substring(1);
+          const modal = document.getElementById(target);
+          if (modal) modal.classList.add('active');
+          document.body.classList.add('modal-open');
+        });
+      });
+
+      // モーダルを閉じる処理
+      document.querySelectorAll('.modal-close').forEach(btn => {
+        btn.addEventListener('click', () => {
+          document.querySelectorAll('.modal').forEach(modal => modal.classList.remove('active'));
+          document.body.classList.remove('modal-open');
         });
       });
 
       // Firestoreからプロジェクトをリアルタイムで取得
       function loadProjects() {
         onSnapshot(collection(db, "projects"), (snapshot) => {
+          if (snapshot.empty) {
+            projectList.innerHTML = "<div class='empty-state'><i class='fas fa-music'></i><p>まだプロジェクトがありません。<br>新しいプロジェクトを作成しましょう！</p></div>";
+            return;
+          }
+          
           projectList.innerHTML = "";
           snapshot.forEach((docSnapshot) => {
             const project = docSnapshot.data();
@@ -56,19 +66,34 @@
       // プロジェクトの表示
       function displayProject(id, project) {
         const projectBlock = document.createElement("div");
-        projectBlock.classList.add("project-block");
+        projectBlock.classList.add("project-card");
         projectBlock.dataset.id = id;
         projectBlock.dataset.password = project.password;
 
+        const instrumentsList = project.instruments ? project.instruments : "なし";
+        const creatorName = project.creatorName || "未設定";
+
         projectBlock.innerHTML = `
-          <h3>${project.songName}</h3>
-          <div class="project-info">
-            <p><i class="fas fa-calendar"></i> ライブ日: ${project.liveDate}</p>
-            <p><i class="fas fa-music"></i> 募集楽器: ${project.instruments || "なし"}</p>
+          <div class="card-header">
+            <h3>${project.songName}</h3>
+            <div class="card-actions">
+              <button class="edit-btn" title="編集"><i class="fas fa-edit"></i></button>
+              <button class="delete-btn" title="削除"><i class="fas fa-trash-alt"></i></button>
+            </div>
           </div>
-          <div class="project-actions">
-            <button class="edit-btn"><i class="fas fa-edit"></i> 編集</button>
-            <button class="delete-btn"><i class="fas fa-trash"></i> 削除</button>
+          <div class="card-body">
+            <div class="info-item">
+              <i class="fas fa-user"></i>
+              <span>作成者: ${creatorName}</span>
+            </div>
+            <div class="info-item">
+              <i class="fas fa-calendar-alt"></i>
+              <span>ライブ日: ${project.liveDate}</span>
+            </div>
+            <div class="info-item">
+              <i class="fas fa-guitar"></i>
+              <span>募集楽器: ${instrumentsList}</span>
+            </div>
           </div>
         `;
 
@@ -76,9 +101,14 @@
         projectBlock.querySelector(".delete-btn").addEventListener("click", async function () {
           const inputPassword = prompt("パスワードを入力してください:");
           if (inputPassword === project.password) {
-            await deleteDoc(doc(db, "projects", id));
+            try {
+              await deleteDoc(doc(db, "projects", id));
+              showToast("プロジェクトを削除しました");
+            } catch (error) {
+              showToast("エラーが発生しました", true);
+            }
           } else {
-            alert("パスワードが違います。");
+            showToast("パスワードが違います", true);
           }
         });
 
@@ -87,28 +117,56 @@
           const inputPassword = prompt("パスワードを入力してください:");
           if (inputPassword === project.password) {
             const newSongName = prompt("新しい曲名:", project.songName);
+            const newCreatorName = prompt("新しい作成者名:", project.creatorName || "");
             const newLiveDate = prompt("新しいライブ日:", project.liveDate);
-            const newInstruments = prompt("新しい募集楽器（カンマ区切りで入力）:", project.instruments);
+            const newInstruments = prompt("新しい募集楽器（カンマ区切りで入力）:", project.instruments || "");
 
             if (newSongName && newLiveDate) {
-              await updateDoc(doc(db, "projects", id), {
-                songName: newSongName,
-                liveDate: newLiveDate,
-                instruments: newInstruments
-              });
+              try {
+                await updateDoc(doc(db, "projects", id), {
+                  songName: newSongName,
+                  creatorName: newCreatorName,
+                  liveDate: newLiveDate,
+                  instruments: newInstruments
+                });
+                showToast("プロジェクトを更新しました");
+              } catch (error) {
+                showToast("エラーが発生しました", true);
+              }
             }
           } else {
-            alert("パスワードが違います。");
+            showToast("パスワードが違います", true);
           }
         });
 
         projectList.appendChild(projectBlock);
       }
 
+      // トースト通知を表示
+      function showToast(message, isError = false) {
+        const toast = document.createElement("div");
+        toast.classList.add("toast");
+        if (isError) toast.classList.add("error");
+        toast.innerHTML = `<p>${message}</p>`;
+        document.body.appendChild(toast);
+        
+        setTimeout(() => {
+          toast.classList.add("show");
+        }, 100);
+        
+        setTimeout(() => {
+          toast.classList.remove("show");
+          setTimeout(() => {
+            document.body.removeChild(toast);
+          }, 300);
+        }, 3000);
+      }
+
       // プロジェクトの追加処理
       projectForm.addEventListener("submit", async function (event) {
         event.preventDefault();
         const songName = document.getElementById("songName").value;
+        const creatorName = document.getElementById("creatorName").value;
         const liveDate = document.getElementById("liveDate").value;
         const password = document.getElementById("password").value;
 
@@ -118,19 +176,23 @@
           .join(", ");
 
         if (songName.trim() === "" || liveDate.trim() === "" || password.trim() === "") {
-          alert("すべての項目を入力してください。");
+          showToast("必須項目を入力してください", true);
           return;
         }
 
-        await addDoc(collection(db, "projects"), {
-          songName,
-          liveDate,
-          instruments: selectedInstruments,
-          password
-        });
-
-        projectForm.reset();
-        alert("プロジェクトが追加されました！");
+        try {
+          await addDoc(collection(db, "projects"), {
+            songName,
+            creatorName,
+            liveDate,
+            instruments: selectedInstruments,
+            password
+          });
+          projectForm.reset();
+          showToast("プロジェクトを追加しました");
+        } catch (error) {
+          showToast("エラーが発生しました", true);
+        }
       });
 
       loadProjects();
@@ -138,270 +200,492 @@
   </script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
   <style>
+    /* リセットとベース */
     * { margin: 0; padding: 0; box-sizing: border-box; }
     :root {
-      --primary: #8B2252; /* えんじ色 */
-      --secondary: #A6567A;
-      --light: #F8E7EF;
-      --dark: #3E1025;
-      --gray: #f0f0f0;
-      --white: #ffffff;
+      --primary: #d35400;
+      --primary-light: #e67e22;
+      --primary-dark: #a04000;
+      --secondary: #2c3e50;
+      --background: #f5f5f5;
+      --card: #ffffff;
+      --text: #333333;
+      --text-light: #7f8c8d;
+      --border: #ecf0f1;
+      --danger: #e74c3c;
+      --success: #2ecc71;
+      --shadow: 0 4px 6px rgba(0,0,0,0.1);
+      --radius: 8px;
+      --transition: all 0.3s ease;
     }
+    
     body {
       font-family: 'Helvetica Neue', Arial, sans-serif;
-      background-color: var(--light);
-      padding: 0;
-      color: #333;
+      background-color: var(--background);
+      color: var(--text);
       line-height: 1.6;
+      padding-bottom: 60px;
     }
+    
+    /* ヘッダー */
     header {
-      background-color: var(--primary);
-      color: var(--white);
-      padding: 20px 0;
+      background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+      color: white;
+      padding: 25px 0;
       text-align: center;
-      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+      box-shadow: var(--shadow);
     }
-    .container {
-      max-width: 900px;
-      margin: 20px auto;
+    
+    .header-content {
+      max-width: 1000px;
+      margin: 0 auto;
       padding: 0 20px;
     }
-    .tabs {
-      display: flex;
-      margin-bottom: 20px;
-      border-bottom: 1px solid var(--gray);
+    
+    .site-title {
+      font-size: 2.2rem;
+      margin-bottom: 8px;
+      font-weight: 700;
     }
-    .tab {
-      padding: 10px 20px;
-      cursor: pointer;
-      border-radius: 5px 5px 0 0;
-      transition: all 0.3s ease;
+    
+    .site-description {
+      font-size: 1rem;
+      opacity: 0.9;
+      max-width: 600px;
+      margin: 0 auto;
     }
-    .tab.active {
-      background-color: var(--primary);
-      color: var(--white);
+    
+    /* コンテナ */
+    .container {
+      max-width: 1000px;
+      margin: 30px auto;
+      padding: 0 20px;
     }
-    .tab-content {
-      display: none;
-      background-color: var(--white);
-      border-radius: 0 0 8px 8px;
-      padding: 20px;
-      box-shadow: 0 4px 8px rgba(0,0,0,0.05);
-    }
-    .tab-content.active {
-      display: block;
-    }
-    h1, h2, h3 {
-      color: var(--dark);
-    }
-    .create-form {
-      background-color: var(--white);
-      border-radius: 8px;
+    
+    /* カード共通スタイル */
+    .card {
+      background-color: var(--card);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
       padding: 25px;
       margin-bottom: 30px;
-      box-shadow: 0 4px 12px rgba(0,0,0,0.08);
     }
+    
+    .card-title {
+      font-size: 1.5rem;
+      color: var(--primary);
+      margin-bottom: 20px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    
+    /* フォーム */
     .form-group {
       margin-bottom: 20px;
     }
+    
     label {
       display: block;
       margin-bottom: 8px;
       font-weight: 600;
-      color: var(--dark);
+      color: var(--secondary);
     }
-    input[type="text"], input[type="date"], input[type="password"] {
+    
+    input[type="text"],
+    input[type="date"],
+    input[type="password"] {
       width: 100%;
-      padding: 10px;
-      border: 1px solid #ddd;
-      border-radius: 5px;
+      padding: 12px;
+      border: 1px solid var(--border);
+      border-radius: 4px;
       font-size: 16px;
+      transition: var(--transition);
     }
+    
+    input[type="text"]:focus,
+    input[type="date"]:focus,
+    input[type="password"]:focus {
+      border-color: var(--primary);
+      outline: none;
+      box-shadow: 0 0 0 3px rgba(211, 84, 0, 0.2);
+    }
+    
     .instrument-options {
       display: flex;
       flex-wrap: wrap;
       gap: 10px;
       margin-top: 10px;
     }
+    
     .instrument-option {
       display: flex;
       align-items: center;
       margin-right: 15px;
     }
+    
+    /* ボタン */
     .btn {
-      padding: 12px 24px;
-      background-color: var(--primary);
-      color: var(--white);
-      border: none;
-      border-radius: 5px;
-      cursor: pointer;
-      font-size: 16px;
-      font-weight: 600;
-      transition: all 0.3s ease;
-      display: inline-block;
-    }
-    .btn:hover {
-      background-color: var(--secondary);
-      transform: translateY(-2px);
-    }
-    .project-block {
-      border-radius: 8px;
-      padding: 20px;
-      margin-bottom: 20px;
-      background-color: var(--white);
-      box-shadow: 0 3px 10px rgba(0,0,0,0.05);
-      transition: all 0.3s ease;
-      border-left: 5px solid var(--primary);
-    }
-    .project-block:hover {
-      transform: translateY(-3px);
-      box-shadow: 0 5px 15px rgba(0,0,0,0.1);
-    }
-    .project-block h3 {
-      color: var(--primary);
-      margin-bottom: 10px;
-      font-size: 1.3rem;
-    }
-    .project-info {
-      margin-bottom: 15px;
-    }
-    .project-info p {
-      margin-bottom: 5px;
-      color: #555;
-    }
-    .project-actions {
-      display: flex;
-      gap: 10px;
-    }
-    .edit-btn, .delete-btn {
-      padding: 8px 12px;
+      padding: 12px 20px;
       border: none;
       border-radius: 4px;
       cursor: pointer;
-      font-size: 14px;
-      transition: all 0.3s ease;
+      font-size: 16px;
+      font-weight: 600;
+      transition: var(--transition);
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
     }
+    
+    .btn-primary {
+      background-color: var(--primary);
+      color: white;
+    }
+    
+    .btn-primary:hover {
+      background-color: var(--primary-dark);
+      transform: translateY(-2px);
+    }
+    
+    /* プロジェクトカード */
+    .project-cards {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+      gap: 20px;
+      margin-top: 30px;
+    }
+    
+    .project-card {
+      background-color: var(--card);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      overflow: hidden;
+      transition: var(--transition);
+      border-top: 4px solid var(--primary);
+    }
+    
+    .project-card:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+    }
+    
+    .card-header {
+      padding: 15px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 1px solid var(--border);
+    }
+    
+    .card-header h3 {
+      color: var(--secondary);
+      font-size: 1.3rem;
+      word-break: break-word;
+    }
+    
+    .card-actions {
+      display: flex;
+      gap: 10px;
+    }
+    
+    .edit-btn, .delete-btn {
+      background: transparent;
+      border: none;
+      font-size: 18px;
+      cursor: pointer;
+      transition: var(--transition);
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    
     .edit-btn {
+      color: var(--primary);
+    }
+    
+    .edit-btn:hover {
+      background: rgba(211, 84, 0, 0.1);
+    }
+    
+    .delete-btn {
+      color: var(--danger);
+    }
+    
+    .delete-btn:hover {
+      background: rgba(231, 76, 60, 0.1);
+    }
+    
+    .card-body {
+      padding: 15px;
+    }
+    
+    .info-item {
+      margin-bottom: 10px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    
+    .info-item i {
+      color: var(--primary);
+      width: 20px;
+      text-align: center;
+    }
+    
+    /* 空の状態 */
+    .empty-state {
+      text-align: center;
+      padding: 40px 20px;
+      color: var(--text-light);
+      background-color: var(--card);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+    }
+    
+    .empty-state i {
+      font-size: 3rem;
+      margin-bottom: 15px;
+      color: var(--primary-light);
+    }
+    
+    /* トースト通知 */
+    .toast {
+      position: fixed;
+      bottom: -100px;
+      left: 50%;
+      transform: translateX(-50%);
+      background-color: var(--success);
+      color: white;
+      padding: 12px 20px;
+      border-radius: 4px;
+      box-shadow: 0 3px 10px rgba(0,0,0,0.2);
+      z-index: 1000;
+      transition: bottom 0.3s ease;
+    }
+    
+    .toast.show {
+      bottom: 20px;
+    }
+    
+    .toast.error {
+      background-color: var(--danger);
+    }
+    
+    /* フッター */
+    .footer {
       background-color: var(--secondary);
       color: white;
-    }
-    .delete-btn {
-      background-color: #d9534f;
-      color: white;
-    }
-    .footer {
-      background-color: var(--dark);
-      color: var(--white);
+      padding: 15px 0;
       text-align: center;
+      position: fixed;
+      bottom: 0;
+      width: 100%;
+    }
+    
+    .footer-content {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 20px;
+      flex-wrap: wrap;
+    }
+    
+    .footer-link {
+      color: white;
+      text-decoration: none;
+      opacity: 0.8;
+      transition: var(--transition);
+    }
+    
+    .footer-link:hover {
+      opacity: 1;
+    }
+    
+    /* モーダル */
+    .modal {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background-color: rgba(0,0,0,0.6);
+      z-index: 1000;
+      display: flex;
+      align-items: center;
+      justify-content: center;
       padding: 20px;
-      margin-top: 40px;
+      opacity: 0;
+      visibility: hidden;
+      transition: var(--transition);
     }
-    .policy-content, .faq-content {
-      background-color: var(--white);
-      border-radius: 8px;
-      padding: 25px;
-      margin-bottom: 30px;
-      box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+    
+    .modal.active {
+      opacity: 1;
+      visibility: visible;
     }
+    
+    .modal-content {
+      background-color: white;
+      border-radius: var(--radius);
+      width: 100%;
+      max-width: 700px;
+      max-height: 90vh;
+      overflow-y: auto;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+    }
+    
+    .modal-header {
+      padding: 15px 20px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 1px solid var(--border);
+    }
+    
+    .modal-title {
+      font-size: 1.5rem;
+      color: var(--secondary);
+    }
+    
+    .modal-close {
+      background: transparent;
+      border: none;
+      font-size: 20px;
+      cursor: pointer;
+      color: var(--text-light);
+    }
+    
+    .modal-body {
+      padding: 20px;
+    }
+    
+    body.modal-open {
+      overflow: hidden;
+    }
+    
+    /* FAQ */
     .faq-item {
       margin-bottom: 20px;
+      border-bottom: 1px solid var(--border);
+      padding-bottom: 15px;
     }
+    
+    .faq-item:last-child {
+      border-bottom: none;
+    }
+    
     .faq-question {
       font-weight: bold;
       color: var(--primary);
       margin-bottom: 10px;
     }
+    
     /* レスポンシブ対応 */
     @media (max-width: 768px) {
-      .container {
-        padding: 0 15px;
+      .site-title {
+        font-size: 1.8rem;
       }
-      .tabs {
+      
+      .project-cards {
+        grid-template-columns: 1fr;
+      }
+      
+      .instrument-options {
         flex-direction: column;
+        align-items: flex-start;
       }
-      .tab {
-        width: 100%;
-        text-align: center;
+      
+      .modal-content {
+        width: 95%;
       }
     }
   </style>
 </head>
 <body>
   <header>
-    <h1>バンドプロジェクト管理</h1>
+    <div class="header-content">
+      <h1 class="site-title">バンドマッチ</h1>
+      <p class="site-description">音楽仲間を見つけて、一緒にパフォーマンスしましょう</p>
+    </div>
   </header>
   
   <div class="container">
-    <div class="tabs">
-      <div class="tab active" data-target="projects-tab">プロジェクト</div>
-      <div class="tab" data-target="policy-tab">プライバシーポリシー</div>
-      <div class="tab" data-target="faq-tab">FAQ</div>
-    </div>
-    
-    <div id="projects-tab" class="tab-content active">
-      <div class="create-form">
-        <h2><i class="fas fa-guitar"></i> 新規プロジェクト作成</h2>
-        <form id="projectForm">
-          <div class="form-group">
-            <label for="songName">曲名:</label>
-            <input type="text" id="songName" required placeholder="例: 紅">
-          </div>
-          <div class="form-group">
-            <label for="liveDate">ライブ日:</label>
-            <input type="date" id="liveDate" required>
-          </div>
-          <div class="form-group">
-            <label>募集楽器:</label>
-            <div class="instrument-options">
-              <div class="instrument-option">
-                <input type="checkbox" id="guitar" name="instrument" value="ギター">
-                <label for="guitar">ギター</label>
-              </div>
-              <div class="instrument-option">
-                <input type="checkbox" id="keyboard" name="instrument" value="キーボード">
-                <label for="keyboard">キーボード</label>
-              </div>
-              <div class="instrument-option">
-                <input type="checkbox" id="bass" name="instrument" value="ベース">
-                <label for="bass">ベース</label>
-              </div>
-              <div class="instrument-option">
-                <input type="checkbox" id="cajon" name="instrument" value="カホン">
-                <label for="cajon">カホン</label>
-              </div>
-              <div class="instrument-option">
-                <input type="checkbox" id="violin" name="instrument" value="ヴァイオリン">
-                <label for="violin">ヴァイオリン</label>
-              </div>
-              <div class="instrument-option">
-                <input type="checkbox" id="flute" name="instrument" value="フルート">
-                <label for="flute">フルート</label>
-              </div>
-              <div class="instrument-option">
-                <input type="checkbox" id="trumpet" name="instrument" value="トランペット">
-                <label for="trumpet">トランペット</label>
-              </div>
+    <div class="card">
+      <h2 class="card-title"><i class="fas fa-plus-circle"></i> 新規プロジェクト作成</h2>
+      <form id="projectForm">
+        <div class="form-group">
+          <label for="songName">曲名 <span class="required">*</span></label>
+          <input type="text" id="songName" required placeholder="例: 紅">
+        </div>
+        <div class="form-group">
+          <label for="creatorName">作成者名 <span class="required">*</span></label>
+          <input type="text" id="creatorName" required placeholder="例: 田中太郎">
+        </div>
+        <div class="form-group">
+          <label for="liveDate">ライブ日 <span class="required">*</span></label>
+          <input type="date" id="liveDate" required>
+        </div>
+        <div class="form-group">
+          <label>募集楽器:</label>
+          <div class="instrument-options">
+            <div class="instrument-option">
+              <input type="checkbox" id="guitar" name="instrument" value="ギター">
+              <label for="guitar">ギター</label>
+            </div>
+            <div class="instrument-option">
+              <input type="checkbox" id="keyboard" name="instrument" value="キーボード">
+              <label for="keyboard">キーボード</label>
+            </div>
+            <div class="instrument-option">
+              <input type="checkbox" id="bass" name="instrument" value="ベース">
+              <label for="bass">ベース</label>
+            </div>
+            <div class="instrument-option">
+              <input type="checkbox" id="cajon" name="instrument" value="カホン">
+              <label for="cajon">カホン</label>
+            </div>
+            <div class="instrument-option">
+              <input type="checkbox" id="violin" name="instrument" value="ヴァイオリン">
+              <label for="violin">ヴァイオリン</label>
+            </div>
+            <div class="instrument-option">
+              <input type="checkbox" id="flute" name="instrument" value="フルート">
+              <label for="flute">フルート</label>
+            </div>
+            <div class="instrument-option">
+              <input type="checkbox" id="trumpet" name="instrument" value="トランペット">
+              <label for="trumpet">トランペット</label>
             </div>
           </div>
-          <div class="form-group">
-            <label for="password">パスワード (編集・削除用):</label>
-            <input type="password" id="password" required placeholder="パスワードを設定してください">
-          </div>
-          <button type="submit" class="btn"><i class="fas fa-plus-circle"></i> プロジェクト追加</button>
-        </form>
-      </div>
-      
-      <h2><i class="fas fa-list"></i> プロジェクト一覧</h2>
-      <div id="projectList"></div>
+        </div>
+        <div class="form-group">
+          <label for="password">パスワード (編集・削除用) <span class="required">*</span></label>
+          <input type="password" id="password" required placeholder="パスワードを設定してください">
+        </div>
+        <button type="submit" class="btn btn-primary"><i class="fas fa-plus-circle"></i> プロジェクト追加</button>
+      </form>
     </div>
     
-    <div id="policy-tab" class="tab-content">
-      <div class="policy-content">
-        <h2>プライバシーポリシー</h2>
+    <h2 class="card-title"><i class="fas fa-music"></i> プロジェクト一覧</h2>
+    <div id="projectList" class="project-cards"></div>
+  </div>
+  
+  <!-- モーダル: プライバシーポリシー -->
+  <div id="policy-modal" class="modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2 class="modal-title">プライバシーポリシー</h2>
+        <button class="modal-close"><i class="fas fa-times"></i></button>
+      </div>
+      <div class="modal-body">
         <p>当サイトにおけるプライバシーポリシーについて説明します。</p>
         
         <h3>1. 収集する情報</h3>
-        <p>当サイトでは、プロジェクト情報（曲名、ライブ日、募集楽器）とパスワードを収集します。個人を特定できる情報は収集しておりません。</p>
+        <p>当サイトでは、プロジェクト情報（曲名、作成者名、ライブ日、募集楽器）とパスワードを収集します。個人を特定できる情報は収集しておりません。</p>
         
         <h3>2. 情報の利用目的</h3>
         <p>収集した情報は、バンドプロジェクト管理サービスの提供のみに使用されます。第三者への提供は行いません。</p>
@@ -416,14 +700,19 @@
         <p>プライバシーポリシーに関するお問い合わせは、下部のお問い合わせ先までご連絡ください。</p>
       </div>
     </div>
-    
-    <div id="faq-tab" class="tab-content">
-      <div class="faq-content">
-        <h2>よくある質問</h2>
-        
+  </div>
+  
+  <!-- モーダル: FAQ -->
+  <div id="faq-modal" class="modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2 class="modal-title">よくある質問</h2>
+        <button class="modal-close"><i class="fas fa-times"></i></button>
+      </div>
+      <div class="modal-body">
         <div class="faq-item">
           <div class="faq-question">Q: プロジェクトはどのように作成すればいいですか？</div>
-          <div class="faq-answer">A: プロジェクトタブで曲名、ライブ日、募集楽器を選択し、パスワードを設定してプロジェクト追加ボタンをクリックしてください。</div>
+          <div class="faq-answer">A: プロジェクト作成フォームで曲名、作成者名、ライブ日、募集楽器を選択し、パスワードを設定してプロジェクト追加ボタンをクリックしてください。</div>
         </div>
         
         <div class="faq-item">
@@ -444,9 +733,14 @@
     </div>
   </div>
   
+  <!-- フッター -->
   <footer class="footer">
-    <p>&copy; 2025 バンドプロジェクト管理. All Rights Reserved.</p>
-    <p>お問い合わせ: contact@bandproject.example.com</p>
+    <div class="footer-content">
+      <p>&copy; 2025 バンドマッチ</p>
+      <a href="#policy-modal" class="footer-link">プライバシーポリシー</a>
+      <a href="#faq-modal" class="footer-link">よくある質問</a>
+      <a href="mailto:contact@bandmatch.example.com" class="footer-link">お問い合わせ</a>
+    </div>
   </footer>
 </body>
 </html>
