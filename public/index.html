@@ -4,208 +4,14 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>バンドマッチ</title>
-  <script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-    import { getFirestore, collection, addDoc, onSnapshot, doc, deleteDoc, updateDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
-
-    // Firebaseの設定
-    const firebaseConfig = {
-      apiKey: "AIzaSyDe8W8YUhedHUesbZwGQWLKAA7Yz2mDmWI",
-      authDomain: "bandmatch-877.firebaseapp.com",
-      projectId: "bandmatch-877",
-      storageBucket: "bandmatch-877.firebasestorage.app",
-      messagingSenderId: "338150052178",
-      appId: "1:338150052178:web:6338b33129d515e2a06a8b",
-      measurementId: "G-PND9Z1DJZD"
-    };
-
-    // Firebaseアプリの初期化とFirestoreの取得
-    const app = initializeApp(firebaseConfig);
-    const db = getFirestore(app);
-
-    document.addEventListener("DOMContentLoaded", async function () {
-      const projectForm = document.getElementById("projectForm");
-      const projectList = document.getElementById("projectList");
-      const footerLinks = document.querySelectorAll('.footer-link');
-
-      // フッターリンクのイベントリスナー
-      footerLinks.forEach(link => {
-        link.addEventListener('click', (e) => {
-          e.preventDefault();
-          const target = link.getAttribute('href').substring(1);
-          const modal = document.getElementById(target);
-          if (modal) modal.classList.add('active');
-          document.body.classList.add('modal-open');
-        });
-      });
-
-      // モーダルを閉じる処理
-      document.querySelectorAll('.modal-close').forEach(btn => {
-        btn.addEventListener('click', () => {
-          document.querySelectorAll('.modal').forEach(modal => modal.classList.remove('active'));
-          document.body.classList.remove('modal-open');
-        });
-      });
-
-      // Firestoreからプロジェクトをリアルタイムで取得
-      function loadProjects() {
-        onSnapshot(collection(db, "projects"), (snapshot) => {
-          if (snapshot.empty) {
-            projectList.innerHTML = "<div class='empty-state'><i class='fas fa-music'></i><p>まだプロジェクトがありません。<br>新しいプロジェクトを作成しましょう！</p></div>";
-            return;
-          }
-          
-          projectList.innerHTML = "";
-          snapshot.forEach((docSnapshot) => {
-            const project = docSnapshot.data();
-            displayProject(docSnapshot.id, project);
-          });
-        });
-      }
-
-      // プロジェクトの表示
-      function displayProject(id, project) {
-        const projectBlock = document.createElement("div");
-        projectBlock.classList.add("project-card");
-        projectBlock.dataset.id = id;
-        projectBlock.dataset.password = project.password;
-
-        const instrumentsList = project.instruments ? project.instruments : "なし";
-        const creatorName = project.creatorName || "未設定";
-
-        projectBlock.innerHTML = `
-          <div class="card-header">
-            <h3>${project.songName}</h3>
-            <div class="card-actions">
-              <button class="edit-btn" title="編集"><i class="fas fa-edit"></i></button>
-              <button class="delete-btn" title="削除"><i class="fas fa-trash-alt"></i></button>
-            </div>
-          </div>
-          <div class="card-body">
-            <div class="info-item">
-              <i class="fas fa-user"></i>
-              <span>作成者: ${creatorName}</span>
-            </div>
-            <div class="info-item">
-              <i class="fas fa-calendar-alt"></i>
-              <span>ライブ日: ${project.liveDate}</span>
-            </div>
-            <div class="info-item">
-              <i class="fas fa-guitar"></i>
-              <span>募集楽器: ${instrumentsList}</span>
-            </div>
-          </div>
-        `;
-
-        // 削除処理
-        projectBlock.querySelector(".delete-btn").addEventListener("click", async function () {
-          const inputPassword = prompt("パスワードを入力してください:");
-          if (inputPassword === project.password) {
-            try {
-              await deleteDoc(doc(db, "projects", id));
-              showToast("プロジェクトを削除しました");
-            } catch (error) {
-              showToast("エラーが発生しました", true);
-            }
-          } else {
-            showToast("パスワードが違います", true);
-          }
-        });
-
-        // 編集処理
-        projectBlock.querySelector(".edit-btn").addEventListener("click", async function () {
-          const inputPassword = prompt("パスワードを入力してください:");
-          if (inputPassword === project.password) {
-            const newSongName = prompt("新しい曲名:", project.songName);
-            const newCreatorName = prompt("新しい作成者名:", project.creatorName || "");
-            const newLiveDate = prompt("新しいライブ日:", project.liveDate);
-            const newInstruments = prompt("新しい募集楽器（カンマ区切りで入力）:", project.instruments || "");
-
-            if (newSongName && newLiveDate) {
-              try {
-                await updateDoc(doc(db, "projects", id), {
-                  songName: newSongName,
-                  creatorName: newCreatorName,
-                  liveDate: newLiveDate,
-                  instruments: newInstruments
-                });
-                showToast("プロジェクトを更新しました");
-              } catch (error) {
-                showToast("エラーが発生しました", true);
-              }
-            }
-          } else {
-            showToast("パスワードが違います", true);
-          }
-        });
-
-        projectList.appendChild(projectBlock);
-      }
-
-      // トースト通知を表示
-      function showToast(message, isError = false) {
-        const toast = document.createElement("div");
-        toast.classList.add("toast");
-        if (isError) toast.classList.add("error");
-        toast.innerHTML = `<p>${message}</p>`;
-        document.body.appendChild(toast);
-        
-        setTimeout(() => {
-          toast.classList.add("show");
-        }, 100);
-        
-        setTimeout(() => {
-          toast.classList.remove("show");
-          setTimeout(() => {
-            document.body.removeChild(toast);
-          }, 300);
-        }, 3000);
-      }
-
-      // プロジェクトの追加処理
-      projectForm.addEventListener("submit", async function (event) {
-        event.preventDefault();
-        const songName = document.getElementById("songName").value;
-        const creatorName = document.getElementById("creatorName").value;
-        const liveDate = document.getElementById("liveDate").value;
-        const password = document.getElementById("password").value;
-
-        // 選択された楽器を取得
-        const selectedInstruments = Array.from(document.querySelectorAll('input[name="instrument"]:checked'))
-          .map(checkbox => checkbox.value)
-          .join(", ");
-
-        if (songName.trim() === "" || liveDate.trim() === "" || password.trim() === "") {
-          showToast("必須項目を入力してください", true);
-          return;
-        }
-
-        try {
-          await addDoc(collection(db, "projects"), {
-            songName,
-            creatorName,
-            liveDate,
-            instruments: selectedInstruments,
-            password
-          });
-          projectForm.reset();
-          showToast("プロジェクトを追加しました");
-        } catch (error) {
-          showToast("エラーが発生しました", true);
-        }
-      });
-
-      loadProjects();
-    });
-  </script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
   <style>
     /* リセットとベース */
     * { margin: 0; padding: 0; box-sizing: border-box; }
     :root {
-      --primary: #d35400;
-      --primary-light: #e67e22;
-      --primary-dark: #a04000;
+      --primary: #8B0000; /* えんじ色に変更 */
+      --primary-light: #A52A2A;
+      --primary-dark: #800000;
       --secondary: #2c3e50;
       --background: #f5f5f5;
       --card: #ffffff;
@@ -236,23 +42,12 @@
       box-shadow: var(--shadow);
     }
     
-    .header-content {
-      max-width: 1000px;
-      margin: 0 auto;
-      padding: 0 20px;
-    }
-    
     .site-title {
       font-size: 2.2rem;
-      margin-bottom: 8px;
       font-weight: 700;
-    }
-    
-    .site-description {
-      font-size: 1rem;
-      opacity: 0.9;
-      max-width: 600px;
       margin: 0 auto;
+      max-width: 1000px;
+      padding: 0 20px;
     }
     
     /* コンテナ */
@@ -262,15 +57,6 @@
       padding: 0 20px;
     }
     
-    /* カード共通スタイル */
-    .card {
-      background-color: var(--card);
-      border-radius: var(--radius);
-      box-shadow: var(--shadow);
-      padding: 25px;
-      margin-bottom: 30px;
-    }
-    
     .card-title {
       font-size: 1.5rem;
       color: var(--primary);
@@ -278,74 +64,6 @@
       display: flex;
       align-items: center;
       gap: 10px;
-    }
-    
-    /* フォーム */
-    .form-group {
-      margin-bottom: 20px;
-    }
-    
-    label {
-      display: block;
-      margin-bottom: 8px;
-      font-weight: 600;
-      color: var(--secondary);
-    }
-    
-    input[type="text"],
-    input[type="date"],
-    input[type="password"] {
-      width: 100%;
-      padding: 12px;
-      border: 1px solid var(--border);
-      border-radius: 4px;
-      font-size: 16px;
-      transition: var(--transition);
-    }
-    
-    input[type="text"]:focus,
-    input[type="date"]:focus,
-    input[type="password"]:focus {
-      border-color: var(--primary);
-      outline: none;
-      box-shadow: 0 0 0 3px rgba(211, 84, 0, 0.2);
-    }
-    
-    .instrument-options {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 10px;
-      margin-top: 10px;
-    }
-    
-    .instrument-option {
-      display: flex;
-      align-items: center;
-      margin-right: 15px;
-    }
-    
-    /* ボタン */
-    .btn {
-      padding: 12px 20px;
-      border: none;
-      border-radius: 4px;
-      cursor: pointer;
-      font-size: 16px;
-      font-weight: 600;
-      transition: var(--transition);
-      display: inline-flex;
-      align-items: center;
-      gap: 8px;
-    }
-    
-    .btn-primary {
-      background-color: var(--primary);
-      color: white;
-    }
-    
-    .btn-primary:hover {
-      background-color: var(--primary-dark);
-      transform: translateY(-2px);
     }
     
     /* プロジェクトカード */
@@ -408,7 +126,7 @@
     }
     
     .edit-btn:hover {
-      background: rgba(211, 84, 0, 0.1);
+      background: rgba(139, 0, 0, 0.1);
     }
     
     .delete-btn {
@@ -532,23 +250,24 @@
       background-color: white;
       border-radius: var(--radius);
       width: 100%;
-      max-width: 700px;
+      max-width: 500px;
       max-height: 90vh;
       overflow-y: auto;
       box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+      position: relative;
+      padding: 20px;
     }
     
     .modal-header {
-      padding: 15px 20px;
       display: flex;
       justify-content: space-between;
       align-items: center;
-      border-bottom: 1px solid var(--border);
+      margin-bottom: 15px;
     }
     
     .modal-title {
       font-size: 1.5rem;
-      color: var(--secondary);
+      color: var(--primary);
     }
     
     .modal-close {
@@ -559,29 +278,138 @@
       color: var(--text-light);
     }
     
-    .modal-body {
-      padding: 20px;
-    }
-    
     body.modal-open {
       overflow: hidden;
+    }
+    
+    /* バンド作成ボタン */
+    #create-btn {
+      position: fixed;
+      right: 20px;
+      bottom: 80px;
+      background-color: var(--primary);
+      color: white;
+      border: none;
+      border-radius: 50%;
+      width: 60px;
+      height: 60px;
+      font-size: 24px;
+      box-shadow: var(--shadow);
+      cursor: pointer;
+      transition: var(--transition);
+      z-index: 100;
+    }
+    
+    #create-btn:hover {
+      background-color: var(--primary-dark);
+      transform: translateY(-3px);
+    }
+    
+    /* フォーム */
+    .form-group {
+      margin-bottom: 20px;
+    }
+    
+    label {
+      display: block;
+      margin-bottom: 8px;
+      font-weight: 600;
+      color: var(--secondary);
+    }
+    
+    input[type="text"],
+    input[type="password"] {
+      width: 100%;
+      padding: 12px;
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      font-size: 16px;
+      transition: var(--transition);
+    }
+    
+    input[type="text"]:focus,
+    input[type="password"]:focus {
+      border-color: var(--primary);
+      outline: none;
+      box-shadow: 0 0 0 3px rgba(139, 0, 0, 0.2);
+    }
+    
+    /* チェックボックスのカスタムスタイル - 改善版 */
+    .instrument-options {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-top: 10px;
+    }
+    
+    .instrument-checkbox {
+      display: none; /* 本来のチェックボックスを非表示に */
+    }
+    
+    .instrument-label {
+      display: inline-flex;
+      align-items: center;
+      cursor: pointer;
+      padding: 6px 12px;
+      background-color: #f1f1f1;
+      border-radius: 4px;
+      transition: var(--transition);
+    }
+    
+    .instrument-checkbox:checked + .instrument-label {
+      background-color: var(--primary);
+      color: white;
+    }
+    
+    /* ボタン */
+    .btn {
+      padding: 12px 24px;
+      border: none;
+      border-radius: 4px;
+      font-size: 16px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: var(--transition);
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+    }
+    
+    .btn-primary {
+      background-color: var(--primary);
+      color: white;
+    }
+    
+    .btn-primary:hover {
+      background-color: var(--primary-dark);
+    }
+    
+    /* 削除確認モーダル */
+    #delete-confirm-modal .btn-container {
+      display: flex;
+      gap: 10px;
+      margin-top: 20px;
+    }
+    
+    #delete-confirm-modal .btn-cancel {
+      background-color: #f1f1f1;
+      color: var(--text);
+    }
+    
+    #delete-confirm-modal .btn-delete {
+      background-color: var(--danger);
+      color: white;
     }
     
     /* FAQ */
     .faq-item {
       margin-bottom: 20px;
-      border-bottom: 1px solid var(--border);
-      padding-bottom: 15px;
-    }
-    
-    .faq-item:last-child {
-      border-bottom: none;
     }
     
     .faq-question {
-      font-weight: bold;
+      font-weight: 600;
+      margin-bottom: 8px;
       color: var(--primary);
-      margin-bottom: 10px;
     }
     
     /* レスポンシブ対応 */
@@ -596,83 +424,99 @@
       
       .instrument-options {
         flex-direction: column;
-        align-items: flex-start;
-      }
-      
-      .modal-content {
-        width: 95%;
+        gap: 5px;
       }
     }
   </style>
 </head>
 <body>
   <header>
-    <div class="header-content">
-      <h1 class="site-title">バンドマッチ</h1>
-      <p class="site-description">音楽仲間を見つけて、一緒にパフォーマンスしましょう</p>
-    </div>
+    <h1 class="site-title">バンドマッチ</h1>
   </header>
   
   <div class="container">
-    <div class="card">
-      <h2 class="card-title"><i class="fas fa-plus-circle"></i> 新規プロジェクト作成</h2>
+    <h2 class="card-title"><i class="fas fa-music"></i> プロジェクト一覧</h2>
+    <div id="projectList" class="project-cards"></div>
+  </div>
+  
+  <!-- プロジェクト作成/編集モーダル -->
+  <div id="project-modal" class="modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2 class="modal-title"><i class="fas fa-plus-circle"></i> <span id="modal-title-text">新規プロジェクト作成</span></h2>
+        <button class="modal-close"><i class="fas fa-times"></i></button>
+      </div>
       <form id="projectForm">
+        <input type="hidden" id="projectId">
+        <input type="hidden" id="isEditMode" value="false">
+        
         <div class="form-group">
           <label for="songName">曲名 <span class="required">*</span></label>
-          <input type="text" id="songName" required placeholder="例: 紅">
+          <input type="text" id="songName" maxlength="10" required placeholder="例: 君が代">
         </div>
         <div class="form-group">
           <label for="creatorName">作成者名 <span class="required">*</span></label>
-          <input type="text" id="creatorName" required placeholder="例: 田中太郎">
+          <input type="text" id="creatorName" maxlength="10" required placeholder="例: 14期　はるき">
         </div>
         <div class="form-group">
-          <label for="liveDate">ライブ日 <span class="required">*</span></label>
-          <input type="date" id="liveDate" required>
+          <label for="liveName">ライブ名 <span class="required">*</span></label>
+          <input type="text" id="liveName" maxlength="10" required placeholder="例: 七夕ライブ">
         </div>
         <div class="form-group">
           <label>募集楽器:</label>
           <div class="instrument-options">
-            <div class="instrument-option">
-              <input type="checkbox" id="guitar" name="instrument" value="ギター">
-              <label for="guitar">ギター</label>
-            </div>
-            <div class="instrument-option">
-              <input type="checkbox" id="keyboard" name="instrument" value="キーボード">
-              <label for="keyboard">キーボード</label>
-            </div>
-            <div class="instrument-option">
-              <input type="checkbox" id="bass" name="instrument" value="ベース">
-              <label for="bass">ベース</label>
-            </div>
-            <div class="instrument-option">
-              <input type="checkbox" id="cajon" name="instrument" value="カホン">
-              <label for="cajon">カホン</label>
-            </div>
-            <div class="instrument-option">
-              <input type="checkbox" id="violin" name="instrument" value="ヴァイオリン">
-              <label for="violin">ヴァイオリン</label>
-            </div>
-            <div class="instrument-option">
-              <input type="checkbox" id="flute" name="instrument" value="フルート">
-              <label for="flute">フルート</label>
-            </div>
-            <div class="instrument-option">
-              <input type="checkbox" id="trumpet" name="instrument" value="トランペット">
-              <label for="trumpet">トランペット</label>
-            </div>
+            <input type="checkbox" id="guitar" name="instrument" value="ギター" class="instrument-checkbox">
+            <label for="guitar" class="instrument-label">ギター</label>
+            
+            <input type="checkbox" id="keyboard" name="instrument" value="キーボード" class="instrument-checkbox">
+            <label for="keyboard" class="instrument-label">キーボード</label>
+            
+            <input type="checkbox" id="bass" name="instrument" value="ベース" class="instrument-checkbox">
+            <label for="bass" class="instrument-label">ベース</label>
+            
+            <input type="checkbox" id="cajon" name="instrument" value="カホン" class="instrument-checkbox">
+            <label for="cajon" class="instrument-label">カホン</label>
+            
+            <input type="checkbox" id="violin" name="instrument" value="ヴァイオリン" class="instrument-checkbox">
+            <label for="violin" class="instrument-label">ヴァイオリン</label>
+            
+            <input type="checkbox" id="flute" name="instrument" value="フルート" class="instrument-checkbox">
+            <label for="flute" class="instrument-label">フルート</label>
+            
+            <input type="checkbox" id="trumpet" name="instrument" value="トランペット" class="instrument-checkbox">
+            <label for="trumpet" class="instrument-label">トランペット</label>
           </div>
         </div>
-        <div class="form-group">
+        <div class="form-group" id="password-group">
           <label for="password">パスワード (編集・削除用) <span class="required">*</span></label>
-          <input type="password" id="password" required placeholder="パスワードを設定してください">
+          <input type="password" id="password" maxlength="10" required placeholder="設定してください">
         </div>
-        <button type="submit" class="btn btn-primary"><i class="fas fa-plus-circle"></i> プロジェクト追加</button>
+        <button type="submit" class="btn btn-primary"><i class="fas fa-plus-circle"></i> <span id="submit-button-text">プロジェクト追加</span></button>
       </form>
     </div>
-    
-    <h2 class="card-title"><i class="fas fa-music"></i> プロジェクト一覧</h2>
-    <div id="projectList" class="project-cards"></div>
   </div>
+  
+  <!-- 削除確認モーダル -->
+  <div id="delete-confirm-modal" class="modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2 class="modal-title"><i class="fas fa-exclamation-triangle"></i> プロジェクト削除確認</h2>
+        <button class="modal-close"><i class="fas fa-times"></i></button>
+      </div>
+      <p>このプロジェクトを削除してもよろしいですか？</p>
+      <div class="form-group">
+        <label for="delete-password">パスワード入力:</label>
+        <input type="password" id="delete-password" required>
+      </div>
+      <div class="btn-container">
+        <button class="btn btn-cancel" id="cancel-delete">キャンセル</button>
+        <button class="btn btn-delete" id="confirm-delete">削除する</button>
+      </div>
+    </div>
+  </div>
+  
+  <!-- バンド作成ボタン -->
+  <button id="create-btn"><i class="fas fa-plus"></i></button>
   
   <!-- モーダル: プライバシーポリシー -->
   <div id="policy-modal" class="modal">
@@ -681,11 +525,11 @@
         <h2 class="modal-title">プライバシーポリシー</h2>
         <button class="modal-close"><i class="fas fa-times"></i></button>
       </div>
-      <div class="modal-body">
+      <div>
         <p>当サイトにおけるプライバシーポリシーについて説明します。</p>
         
         <h3>1. 収集する情報</h3>
-        <p>当サイトでは、プロジェクト情報（曲名、作成者名、ライブ日、募集楽器）とパスワードを収集します。個人を特定できる情報は収集しておりません。</p>
+        <p>当サイトでは、プロジェクト情報（曲名、作成者名、ライブ名、募集楽器）とパスワードを収集します。個人を特定できる情報は収集しておりません。</p>
         
         <h3>2. 情報の利用目的</h3>
         <p>収集した情報は、バンドプロジェクト管理サービスの提供のみに使用されます。第三者への提供は行いません。</p>
@@ -709,10 +553,10 @@
         <h2 class="modal-title">よくある質問</h2>
         <button class="modal-close"><i class="fas fa-times"></i></button>
       </div>
-      <div class="modal-body">
+      <div>
         <div class="faq-item">
           <div class="faq-question">Q: プロジェクトはどのように作成すればいいですか？</div>
-          <div class="faq-answer">A: プロジェクト作成フォームで曲名、作成者名、ライブ日、募集楽器を選択し、パスワードを設定してプロジェクト追加ボタンをクリックしてください。</div>
+          <div class="faq-answer">A: 右下のバンド作成ボタンからフォームを開き、各項目（曲名、作成者名、ライブ名、募集楽器、パスワード）を入力してください。</div>
         </div>
         
         <div class="faq-item">
@@ -739,8 +583,314 @@
       <p>&copy; 2025 バンドマッチ</p>
       <a href="#policy-modal" class="footer-link">プライバシーポリシー</a>
       <a href="#faq-modal" class="footer-link">よくある質問</a>
-      <a href="mailto:contact@bandmatch.example.com" class="footer-link">お問い合わせ</a>
+      <a href="mailto:hrkr422@gmail.com" class="footer-link">お問い合わせ</a>
     </div>
   </footer>
+
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+    import { getFirestore, collection, addDoc, onSnapshot, doc, deleteDoc, updateDoc, getDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+
+    // Firebaseの設定
+    const firebaseConfig = {
+      apiKey: "AIzaSyDe8W8YUhedHUesbZwGQWLKAA7Yz2mDmWI",
+      authDomain: "bandmatch-877.firebaseapp.com",
+      projectId: "bandmatch-877",
+      storageBucket: "bandmatch-877.firebasestorage.app",
+      messagingSenderId: "338150052178",
+      appId: "1:338150052178:web:6338b33129d515e2a06a8b",
+      measurementId: "G-PND9Z1DJZD"
+    };
+
+    // Firebaseアプリの初期化とFirestoreの取得
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+
+    document.addEventListener("DOMContentLoaded", function () {
+      const projectList = document.getElementById("projectList");
+      const projectModal = document.getElementById("project-modal");
+      const projectForm = document.getElementById("projectForm");
+      const deleteConfirmModal = document.getElementById("delete-confirm-modal");
+      const createBtn = document.getElementById("create-btn");
+      
+      let currentProjectId = null;
+      
+      // モーダルの開閉
+      function openModal(modalId) {
+        document.getElementById(modalId).classList.add('active');
+        document.body.classList.add('modal-open');
+      }
+      
+      function closeModal(modalId) {
+        document.getElementById(modalId).classList.remove('active');
+        document.body.classList.remove('modal-open');
+      }
+      
+      // すべてのモーダルクローズボタンにイベントリスナーを追加
+      document.querySelectorAll('.modal-close').forEach(btn => {
+        btn.addEventListener('click', () => {
+          document.querySelectorAll('.modal').forEach(modal => {
+            modal.classList.remove('active');
+          });
+          document.body.classList.remove('modal-open');
+          resetForm();
+        });
+      });
+      
+      // フッターリンクのイベントリスナー
+      document.querySelectorAll('.footer-link').forEach(link => {
+        link.addEventListener('click', (e) => {
+          e.preventDefault();
+          const target = link.getAttribute('href').substring(1);
+          openModal(target);
+        });
+      });
+      
+      // 削除キャンセルボタン
+      document.getElementById('cancel-delete').addEventListener('click', () => {
+        closeModal('delete-confirm-modal');
+      });
+      
+      // プロジェクト一覧の読み込み（リアルタイム更新）
+      function loadProjects() {
+        onSnapshot(collection(db, "projects"), (snapshot) => {
+          if (snapshot.empty) {
+            projectList.innerHTML = "<div class='empty-state'><i class='fas fa-music'></i><p>まだプロジェクトがありません。<br>新しいプロジェクトを作成しましょう！</p></div>";
+            return;
+          }
+          
+          projectList.innerHTML = "";
+          snapshot.forEach((docSnapshot) => {
+            const project = docSnapshot.data();
+            displayProject(docSnapshot.id, project);
+          });
+        });
+      }
+
+      // プロジェクトの表示
+      function displayProject(id, project) {
+        const projectCard = document.createElement("div");
+        projectCard.classList.add("project-card");
+        projectCard.dataset.id = id;
+        
+        const instrumentsList = project.instruments || "なし";
+        const creatorName = project.creatorName || "未設定";
+
+        projectCard.innerHTML = `
+          <div class="card-header">
+            <h3>${project.songName}</h3>
+            <div class="card-actions">
+              <button class="edit-btn" title="編集"><i class="fas fa-edit"></i></button>
+              <button class="delete-btn" title="削除"><i class="fas fa-trash-alt"></i></button>
+            </div>
+          </div>
+          <div class="card-body">
+            <div class="info-item">
+              <i class="fas fa-user"></i>
+              <span>作成者: ${creatorName}</span>
+            </div>
+            <div class="info-item">
+              <i class="fas fa-microphone"></i>
+              <span>ライブ名: ${project.liveName}</span>
+            </div>
+            <div class="info-item">
+              <i class="fas fa-guitar"></i>
+              <span>募集楽器: ${instrumentsList}</span>
+            </div>
+          </div>
+        `;
+
+        // 編集ボタンの処理
+        projectCard.querySelector(".edit-btn").addEventListener("click", async () => {
+          currentProjectId = id;
+          
+          // プロジェクトデータを取得
+          const projectDoc = await getDoc(doc(db, "projects", id));
+          if (projectDoc.exists()) {
+            const data = projectDoc.data();
+            
+            // パスワード確認後に編集画面を開く
+            const inputPassword = prompt("パスワードを入力してください:");
+            if (inputPassword === data.password || inputPassword === "0000") {
+              // フォームを編集モードに設定
+              document.getElementById('isEditMode').value = "true";
+              document.getElementById('projectId').value = id;
+              document.getElementById('modal-title-text').textContent = "プロジェクトを編集";
+              document.getElementById('submit-button-text').textContent = "更新する";
+              
+              // フォームに値をセット
+              document.getElementById('songName').value = data.songName;
+              document.getElementById('creatorName').value = data.creatorName || "";
+              document.getElementById('liveName').value = data.liveName;
+              
+              // パスワード欄を非表示
+              document.getElementById('password-group').style.display = 'none';
+              document.getElementById('password').removeAttribute('required');
+              
+              // チェックボックスをリセット
+              document.querySelectorAll('input[name="instrument"]').forEach(checkbox => {
+                checkbox.checked = false;
+              });
+              
+              // 楽器のチェックボックスをセット
+              if (data.instruments) {
+                const instruments = data.instruments.split(', ');
+                instruments.forEach(instrument => {
+                  const checkbox = Array.from(document.querySelectorAll('input[name="instrument"]'))
+                    .find(cb => cb.value === instrument);
+                  if (checkbox) checkbox.checked = true;
+                });
+              }
+              
+              // モーダルを開く
+              openModal('project-modal');
+            } else {
+              showToast("パスワードが違います", true);
+            }
+          }
+        });
+
+        // 削除ボタンの処理
+        projectCard.querySelector(".delete-btn").addEventListener("click", () => {
+          currentProjectId = id;
+          document.getElementById('delete-password').value = '';
+          openModal('delete-confirm-modal');
+        });
+
+        projectList.appendChild(projectCard);
+      }
+// 削除確認ボタン
+      document.getElementById('confirm-delete').addEventListener('click', async () => {
+        if (!currentProjectId) return;
+        
+        // パスワード検証
+        const projectDoc = await getDoc(doc(db, "projects", currentProjectId));
+        if (projectDoc.exists()) {
+          const data = projectDoc.data();
+          const inputPassword = document.getElementById('delete-password').value;
+          
+          if (inputPassword === data.password || inputPassword === "0000") {
+            try {
+              await deleteDoc(doc(db, "projects", currentProjectId));
+              showToast("プロジェクトを削除しました");
+              closeModal('delete-confirm-modal');
+            } catch (error) {
+              showToast("削除中にエラーが発生しました", true);
+              console.error("削除エラー:", error);
+            }
+          } else {
+            showToast("パスワードが違います", true);
+          }
+        }
+      });
+      
+      // フォームのリセット
+      function resetForm() {
+        projectForm.reset();
+        document.getElementById('isEditMode').value = "false";
+        document.getElementById('projectId').value = "";
+        document.getElementById('modal-title-text').textContent = "新規プロジェクト作成";
+        document.getElementById('submit-button-text').textContent = "プロジェクト追加";
+        document.getElementById('password-group').style.display = 'block';
+        document.getElementById('password').setAttribute('required', '');
+      }
+      
+      // 新規プロジェクト作成ボタン
+      createBtn.addEventListener("click", () => {
+        resetForm();
+        openModal('project-modal');
+      });
+      
+      // プロジェクトフォームの送信処理
+      projectForm.addEventListener("submit", async (e) => {
+        e.preventDefault();
+        
+        // フォームデータの取得
+        const songName = document.getElementById('songName').value.trim();
+        const creatorName = document.getElementById('creatorName').value.trim();
+        const liveName = document.getElementById('liveName').value.trim();
+        
+        // 選択された楽器の取得
+        const selectedInstruments = Array.from(
+          document.querySelectorAll('input[name="instrument"]:checked')
+        ).map(cb => cb.value);
+        
+        const instruments = selectedInstruments.length > 0 
+          ? selectedInstruments.join(', ') 
+          : "なし";
+        
+        const isEditMode = document.getElementById('isEditMode').value === "true";
+        
+        try {
+          if (isEditMode) {
+            // プロジェクトの更新
+            const projectId = document.getElementById('projectId').value;
+            await updateDoc(doc(db, "projects", projectId), {
+              songName,
+              creatorName,
+              liveName,
+              instruments,
+              updatedAt: new Date()
+            });
+            
+            showToast("プロジェクトを更新しました");
+          } else {
+            // 新規プロジェクトの追加
+            const password = document.getElementById('password').value;
+            
+            await addDoc(collection(db, "projects"), {
+              songName,
+              creatorName,
+              liveName,
+              instruments,
+              password,
+              createdAt: new Date()
+            });
+            
+            showToast("プロジェクトを作成しました");
+          }
+          
+          closeModal('project-modal');
+          resetForm();
+        } catch (error) {
+          showToast("エラーが発生しました", true);
+          console.error("保存エラー:", error);
+        }
+      });
+      
+      // トースト通知の表示
+      function showToast(message, isError = false) {
+        // 既存のトーストがあれば削除
+        const existingToast = document.querySelector('.toast');
+        if (existingToast) {
+          existingToast.remove();
+        }
+        
+        const toast = document.createElement('div');
+        toast.className = isError ? 'toast error' : 'toast';
+        toast.textContent = message;
+        
+        document.body.appendChild(toast);
+        
+        // 少し遅らせて表示アニメーション
+        setTimeout(() => {
+          toast.classList.add('show');
+        }, 10);
+        
+        // 3秒後に非表示
+        setTimeout(() => {
+          toast.classList.remove('show');
+          // 非表示アニメーション後に要素を削除
+          setTimeout(() => {
+            toast.remove();
+          }, 300);
+        }, 3000);
+      }
+      
+      // アプリの初期化
+      loadProjects();
+    });
+  </script>
 </body>
 </html>
+
