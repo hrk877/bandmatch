@@ -394,6 +394,23 @@
       color: white;
     }
     
+    /* 編集用パスワード確認モーダル */
+    #edit-password-modal .btn-container {
+      display: flex;
+      gap: 10px;
+      margin-top: 20px;
+    }
+    
+    #edit-password-modal .btn-cancel {
+      background-color: #f1f1f1;
+      color: var(--text);
+    }
+    
+    #edit-password-modal .btn-delete {
+      background-color: var(--danger);
+      color: white;
+    }
+    
     /* FAQ */
     .faq-item { margin-bottom: 20px; }
     
@@ -409,7 +426,7 @@
       .project-cards { grid-template-columns: 1fr; }
       .instrument-options { flex-direction: column; gap: 5px; }
       .search-container { text-align: center; margin-bottom: 15px; }
-      .search-input { width: 100%; max-width: 300px; }
+      .search-input { width: 100%; max-width: 150px; }
     }
   </style>
 </head>
@@ -471,8 +488,8 @@
         </div>
         <div class="form-group" id="password-group">
           <label for="password">パスワード (編集・削除用) <span class="required">*</span></label>
-          <!-- 数字のみ入力可能 -->
-          <input type="password" id="password" pattern="\d+" inputmode="numeric" maxlength="10" required placeholder="設定してください">
+          <!-- 数字限定属性を削除 -->
+          <input type="password" id="password" maxlength="10" required placeholder="設定してください">
         </div>
         <button type="submit" class="btn btn-primary"><i class="fas fa-plus-circle"></i> <span id="submit-button-text">バンド追加</span></button>
       </form>
@@ -489,12 +506,30 @@
       <p>このバンドを削除してもよろしいですか？</p>
       <div class="form-group">
         <label for="delete-password">パスワード入力:</label>
-        <!-- 数字のみ入力可能 -->
-        <input type="password" id="delete-password" pattern="\d+" inputmode="numeric" required>
+        <!-- 数字限定属性を削除 -->
+        <input type="password" id="delete-password" required>
       </div>
       <div class="btn-container">
         <button class="btn btn-cancel" id="cancel-delete">キャンセル</button>
         <button class="btn btn-delete" id="confirm-delete">削除する</button>
+      </div>
+    </div>
+  </div>
+  
+  <!-- 編集用パスワード確認モーダル -->
+  <div id="edit-password-modal" class="modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2 class="modal-title"><i class="fas fa-lock"></i> 編集パスワード確認</h2>
+        <button class="modal-close"><i class="fas fa-times"></i></button>
+      </div>
+      <div class="form-group">
+        <label for="edit-password">パスワード入力:</label>
+        <input type="password" id="edit-password" required placeholder="パスワードを入力">
+      </div>
+      <div class="btn-container">
+        <button class="btn btn-cancel" id="cancel-edit">キャンセル</button>
+        <button class="btn btn-delete" id="confirm-edit">確認</button>
       </div>
     </div>
   </div>
@@ -587,12 +622,13 @@
       const projectModal = document.getElementById("project-modal");
       const projectForm = document.getElementById("projectForm");
       const deleteConfirmModal = document.getElementById("delete-confirm-modal");
+      const editPasswordModal = document.getElementById("edit-password-modal");
       const createBtn = document.getElementById("create-btn");
       const searchInput = document.getElementById("searchInput");
       
       let currentProjectId = null;
       
-      // モーダルの開閉
+      // モーダルの開閉（project-modal のみフォームをリセット）
       function openModal(modalId) {
         document.getElementById(modalId).classList.add('active');
         document.body.classList.add('modal-open');
@@ -601,7 +637,9 @@
       function closeModal(modalId) {
         document.getElementById(modalId).classList.remove('active');
         document.body.classList.remove('modal-open');
-        resetForm();
+        if(modalId === 'project-modal'){
+          resetForm();
+        }
       }
       
       // すべてのモーダルクローズボタン
@@ -684,32 +722,46 @@
           const projectDoc = await getDoc(doc(db, "projects", id));
           if (projectDoc.exists()) {
             const data = projectDoc.data();
-            const inputPassword = prompt("パスワードを入力してください:");
-            if (inputPassword === data.password || inputPassword === "0000") {
-              document.getElementById('isEditMode').value = "true";
-              document.getElementById('projectId').value = id;
-              document.getElementById('modal-title-text').textContent = "バンドを編集";
-              document.getElementById('submit-button-text').textContent = "更新する";
-              document.getElementById('songName').value = data.songName;
-              document.getElementById('creatorName').value = data.creatorName || "";
-              document.getElementById('liveName').value = data.liveName;
-              document.getElementById('password-group').style.display = 'none';
-              document.getElementById('password').removeAttribute('required');
-              document.querySelectorAll('input[name="instrument"]').forEach(checkbox => {
-                checkbox.checked = false;
-              });
-              if (data.instruments) {
-                const instruments = data.instruments.split(', ');
-                instruments.forEach(instrument => {
-                  const checkbox = Array.from(document.querySelectorAll('input[name="instrument"]'))
-                    .find(cb => cb.value === instrument);
-                  if (checkbox) checkbox.checked = true;
+            // 編集用パスワード確認モーダルを表示
+            document.getElementById('edit-password').value = "";
+            openModal('edit-password-modal');
+
+            // 「確認」ボタンの一時イベント登録
+            document.getElementById('confirm-edit').onclick = async () => {
+              const inputPassword = document.getElementById('edit-password').value;
+              if (inputPassword === data.password || inputPassword === "0000") {
+                // 編集モードに切り替え、フォームに既存データをセット
+                document.getElementById('isEditMode').value = "true";
+                document.getElementById('projectId').value = id;
+                document.getElementById('modal-title-text').textContent = "バンドを編集";
+                document.getElementById('submit-button-text').textContent = "更新する";
+                document.getElementById('songName').value = data.songName;
+                document.getElementById('creatorName').value = data.creatorName || "";
+                document.getElementById('liveName').value = data.liveName;
+                document.getElementById('password-group').style.display = 'none';
+                document.getElementById('password').removeAttribute('required');
+                document.querySelectorAll('input[name="instrument"]').forEach(checkbox => {
+                  checkbox.checked = false;
                 });
+                if (data.instruments) {
+                  const instruments = data.instruments.split(', ');
+                  instruments.forEach(instrument => {
+                    const checkbox = Array.from(document.querySelectorAll('input[name="instrument"]'))
+                      .find(cb => cb.value === instrument);
+                    if (checkbox) checkbox.checked = true;
+                  });
+                }
+                closeModal('edit-password-modal');
+                openModal('project-modal');
+              } else {
+                showToast("パスワードが違います", true);
               }
-              openModal('project-modal');
-            } else {
-              showToast("パスワードが違います", true);
-            }
+            };
+
+            // キャンセル処理
+            document.getElementById('cancel-edit').onclick = () => {
+              closeModal('edit-password-modal');
+            };
           }
         });
 
@@ -745,7 +797,7 @@
         }
       });
       
-      // フォームのリセット
+      // フォームのリセット（project-modal閉鎖時のみ実行）
       function resetForm() {
         projectForm.reset();
         document.getElementById('isEditMode').value = "false";
