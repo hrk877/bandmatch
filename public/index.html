@@ -71,7 +71,7 @@
       margin-bottom: 20px;
     }
     .search-input {
-      width: 200px;
+      width: 180px; /* 少し小さく変更 */
       padding: 6px 10px;
       border: 1px solid var(--border);
       border-radius: 4px;
@@ -84,7 +84,7 @@
       box-shadow: 0 0 0 3px rgba(139, 0, 0, 0.2);
     }
     
-    /* プロジェクトカード */
+    /* バンドカード */
     .project-cards {
       display: grid;
       grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
@@ -193,7 +193,7 @@
     
     .toast.error { background-color: var(--danger); }
     
-    /* フッター（常に下部に小さく表示） */
+    /* フッター（常に下部に小さく表示、一行レイアウトに変更） */
     .footer {
       background-color: var(--secondary);
       color: white;
@@ -210,7 +210,7 @@
       justify-content: center;
       align-items: center;
       gap: 15px;
-      flex-wrap: wrap;
+      flex-wrap: nowrap;
     }
     
     .footer-link {
@@ -420,7 +420,7 @@
   
   <div class="container">
     <div style="display: flex; justify-content: space-between; align-items: center;">
-      <h2 class="card-title"><i class="fas fa-music"></i> プロジェクト一覧</h2>
+      <h2 class="card-title"><i class="fas fa-music"></i> バンド一覧</h2>
       <div class="search-container">
         <input type="text" id="searchInput" class="search-input" placeholder="検索">
       </div>
@@ -428,11 +428,11 @@
     <div id="projectList" class="project-cards"></div>
   </div>
   
-  <!-- プロジェクト作成/編集モーダル -->
+  <!-- バンド作成/編集モーダル -->
   <div id="project-modal" class="modal">
     <div class="modal-content">
       <div class="modal-header">
-        <h2 class="modal-title"><i class="fas fa-plus-circle"></i> <span id="modal-title-text">新規プロジェクト作成</span></h2>
+        <h2 class="modal-title"><i class="fas fa-plus-circle"></i> <span id="modal-title-text">新規バンド作成</span></h2>
         <button class="modal-close"><i class="fas fa-times"></i></button>
       </div>
       <form id="projectForm">
@@ -474,7 +474,7 @@
           <!-- 数字のみ入力可能 -->
           <input type="password" id="password" pattern="\d+" inputmode="numeric" maxlength="10" required placeholder="設定してください">
         </div>
-        <button type="submit" class="btn btn-primary"><i class="fas fa-plus-circle"></i> <span id="submit-button-text">プロジェクト追加</span></button>
+        <button type="submit" class="btn btn-primary"><i class="fas fa-plus-circle"></i> <span id="submit-button-text">バンド追加</span></button>
       </form>
     </div>
   </div>
@@ -483,10 +483,10 @@
   <div id="delete-confirm-modal" class="modal">
     <div class="modal-content">
       <div class="modal-header">
-        <h2 class="modal-title"><i class="fas fa-exclamation-triangle"></i> プロジェクト削除確認</h2>
+        <h2 class="modal-title"><i class="fas fa-exclamation-triangle"></i> バンド削除確認</h2>
         <button class="modal-close"><i class="fas fa-times"></i></button>
       </div>
-      <p>このプロジェクトを削除してもよろしいですか？</p>
+      <p>このバンドを削除してもよろしいですか？</p>
       <div class="form-group">
         <label for="delete-password">パスワード入力:</label>
         <!-- 数字のみ入力可能 -->
@@ -512,11 +512,11 @@
       <div>
         <p>当サイトにおけるプライバシーポリシーについて説明します。</p>
         <h3>1. 収集する情報</h3>
-        <p>当サイトでは、プロジェクト情報（曲名、作成者名、ライブ名、募集楽器）とパスワードを収集します。個人を特定できる情報は収集しておりません。</p>
+        <p>当サイトでは、バンド情報（曲名、作成者名、ライブ名、募集楽器）とパスワードを収集します。個人を特定できる情報は収集しておりません。</p>
         <h3>2. 情報の利用目的</h3>
-        <p>収集した情報は、バンドプロジェクト管理サービスの提供のみに使用されます。第三者への提供は行いません。</p>
+        <p>収集した情報は、バンド管理サービスの提供のみに使用されます。第三者への提供は行いません。</p>
         <h3>3. データの保護</h3>
-        <p>入力されたパスワードは、プロジェクトの編集・削除の認証のみに使用されます。安全なパスワードの設定をお願いします。</p>
+        <p>入力されたパスワードは、バンドの編集・削除の認証のみに使用されます。安全なパスワードの設定をお願いします。</p>
         <h3>4. Cookie等の使用</h3>
         <p>当サイトではFirebaseのサービスを使用しており、その過程でCookieが使用される場合があります。</p>
         <h3>5. お問い合わせ</h3>
@@ -529,25 +529,25 @@
   <div id="faq-modal" class="modal">
     <div class="modal-content">
       <div class="modal-header">
-        <h2 class="modal-title">よくある質問</h2>
+        <h2 class="modal-title">FAQ</h2>
         <button class="modal-close"><i class="fas fa-times"></i></button>
       </div>
       <div>
         <div class="faq-item">
-          <div class="faq-question">Q: プロジェクトはどのように作成すればいいですか？</div>
+          <div class="faq-question">Q: バンドはどのように作成すればいいですか？</div>
           <div class="faq-answer">A: 右下のバンド作成ボタンからフォームを開き、各項目（曲名、作成者名、ライブ名、募集楽器、パスワード）を入力してください。</div>
         </div>
         <div class="faq-item">
           <div class="faq-question">Q: パスワードを忘れてしまった場合はどうすればいいですか？</div>
-          <div class="faq-answer">A: 残念ながら、パスワードを忘れた場合、プロジェクトの編集・削除はできません。パスワードはメモなどに控えておくことをお勧めします。</div>
+          <div class="faq-answer">A: 残念ながら、パスワードを忘れた場合、バンドの編集・削除はできません。パスワードはメモなどに控えておくことをお勧めします。</div>
         </div>
         <div class="faq-item">
           <div class="faq-question">Q: 複数の楽器を募集することはできますか？</div>
           <div class="faq-answer">A: はい、複数の楽器にチェックを入れることで、複数の楽器を募集できます。</div>
         </div>
         <div class="faq-item">
-          <div class="faq-question">Q: 一度追加したプロジェクトを編集するにはどうすればいいですか？</div>
-          <div class="faq-answer">A: プロジェクト一覧から該当のプロジェクトの「編集」ボタンをクリックし、設定したパスワードを入力すると編集できます。</div>
+          <div class="faq-question">Q: 一度追加したバンドを編集するにはどうすればいいですか？</div>
+          <div class="faq-answer">A: バンド一覧から該当のバンドの「編集」ボタンをクリックし、設定したパスワードを入力すると編集できます。</div>
         </div>
       </div>
     </div>
@@ -558,7 +558,7 @@
     <div class="footer-content">
       <p>&copy; 2025 バンドマッチ</p>
       <a href="#policy-modal" class="footer-link">プライバシーポリシー</a>
-      <a href="#faq-modal" class="footer-link">よくある質問</a>
+      <a href="#faq-modal" class="footer-link">FAQ</a>
       <a href="mailto:hrkr422@gmail.com" class="footer-link">お問い合わせ</a>
     </div>
   </footer>
@@ -629,11 +629,11 @@
         closeModal('delete-confirm-modal');
       });
       
-      // プロジェクト一覧の読み込み（リアルタイム更新）
+      // バンド一覧の読み込み（リアルタイム更新）
       function loadProjects() {
         onSnapshot(collection(db, "projects"), (snapshot) => {
           if (snapshot.empty) {
-            projectList.innerHTML = "<div class='empty-state'><i class='fas fa-music'></i><p>まだプロジェクトがありません。<br>新しいプロジェクトを作成しましょう！</p></div>";
+            projectList.innerHTML = "<div class='empty-state'><i class='fas fa-music'></i><p>まだバンドがありません。<br>新しいバンドを作成しましょう！</p></div>";
             return;
           }
           
@@ -645,7 +645,7 @@
         });
       }
 
-      // プロジェクトの表示
+      // バンドの表示
       function displayProject(id, project) {
         const projectCard = document.createElement("div");
         projectCard.classList.add("project-card");
@@ -688,7 +688,7 @@
             if (inputPassword === data.password || inputPassword === "0000") {
               document.getElementById('isEditMode').value = "true";
               document.getElementById('projectId').value = id;
-              document.getElementById('modal-title-text').textContent = "プロジェクトを編集";
+              document.getElementById('modal-title-text').textContent = "バンドを編集";
               document.getElementById('submit-button-text').textContent = "更新する";
               document.getElementById('songName').value = data.songName;
               document.getElementById('creatorName').value = data.creatorName || "";
@@ -733,7 +733,7 @@
           if (inputPassword === data.password || inputPassword === "0000") {
             try {
               await deleteDoc(doc(db, "projects", currentProjectId));
-              showToast("プロジェクトを削除しました");
+              showToast("バンドを削除しました");
               closeModal('delete-confirm-modal');
             } catch (error) {
               showToast("削除中にエラーが発生しました", true);
@@ -750,19 +750,19 @@
         projectForm.reset();
         document.getElementById('isEditMode').value = "false";
         document.getElementById('projectId').value = "";
-        document.getElementById('modal-title-text').textContent = "新規プロジェクト作成";
-        document.getElementById('submit-button-text').textContent = "プロジェクト追加";
+        document.getElementById('modal-title-text').textContent = "新規バンド作成";
+        document.getElementById('submit-button-text').textContent = "バンド追加";
         document.getElementById('password-group').style.display = 'block';
         document.getElementById('password').setAttribute('required', '');
       }
       
-      // 新規プロジェクト作成ボタン
+      // 新規バンド作成ボタン
       createBtn.addEventListener("click", () => {
         resetForm();
         openModal('project-modal');
       });
       
-      // プロジェクトフォームの送信処理
+      // バンドフォームの送信処理
       projectForm.addEventListener("submit", async (e) => {
         e.preventDefault();
         const songName = document.getElementById('songName').value.trim();
@@ -784,7 +784,7 @@
               instruments,
               updatedAt: new Date()
             });
-            showToast("プロジェクトを更新しました");
+            showToast("バンドを更新しました");
           } else {
             const password = document.getElementById('password').value;
             await addDoc(collection(db, "projects"), {
@@ -795,7 +795,7 @@
               password,
               createdAt: new Date()
             });
-            showToast("プロジェクトを作成しました");
+            showToast("バンドを作成しました");
           }
           closeModal('project-modal');
           resetForm();
