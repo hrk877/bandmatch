@@ -1,9 +1,24 @@
+
 <!DOCTYPE html>
 <html lang="ja">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>バンドマッチ</title>
+
+  <!-- Open Graph meta tags -->
+  <meta property="og:title" content="バンドマッチ">
+  <meta property="og:description" content="バンドマッチサイトへようこそ。">
+  <meta property="og:image" content="https://bandmatch.vercel.app/バンドマッチ.png">
+  <meta property="og:url" content="https://example.com/">
+  <meta property="og:type" content="website">
+
+  <!-- Twitter Card meta tags -->
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="バンドマッチ">
+  <meta name="twitter:description" content="バンドマッチサイトへようこそ。">
+  <meta name="twitter:image" content="https://bandmatch.vercel.app/バンドマッチ.png">
+
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
   <style>
     /* リセットとベース */
@@ -480,10 +495,10 @@
             <label for="cajon" class="instrument-label">カホン</label>
             <input type="checkbox" id="violin" name="instrument" value="ヴァイオリン" class="instrument-checkbox">
             <label for="violin" class="instrument-label">ヴァイオリン</label>
+            <input type="checkbox" id="violin" name="instrument" value="ヴィオラ" class="instrument-checkbox">
+            <label for="violin" class="instrument-label">ヴィオラ</label>
             <input type="checkbox" id="flute" name="instrument" value="フルート" class="instrument-checkbox">
             <label for="flute" class="instrument-label">フルート</label>
-            <input type="checkbox" id="trumpet" name="instrument" value="トランペット" class="instrument-checkbox">
-            <label for="trumpet" class="instrument-label">トランペット</label>
           </div>
         </div>
         <div class="form-group" id="password-group">
@@ -574,7 +589,7 @@
         </div>
         <div class="faq-item">
           <div class="faq-question">Q: パスワードを忘れてしまった場合はどうすればいいですか？</div>
-          <div class="faq-answer">A: 残念ながら、パスワードを忘れた場合、バンドの編集・削除はできません。パスワードはメモなどに控えておくことをお勧めします。</div>
+          <div class="faq-answer">A: 残念ながら、パスワードを忘れてしまった場合、バンドの編集・削除はできません。下部のお問い合わせ先までご連絡ください。</div>
         </div>
         <div class="faq-item">
           <div class="faq-question">Q: 複数の楽器を募集することはできますか？</div>
