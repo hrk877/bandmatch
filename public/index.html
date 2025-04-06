@@ -434,6 +434,11 @@
       color: var(--primary);
     }
     
+    /* ログインモーダル（新規追加） */
+    #login-modal .form-group {
+      margin-bottom: 20px;
+    }
+    
     /* レスポンシブ対応 */
     @media (max-width: 768px) {
       .site-title { font-size: 1.8rem; }
@@ -552,10 +557,17 @@
       <div class="modal-header">
         <h2 class="modal-title"><i class="fas fa-sign-in-alt"></i> ログイン</h2>
       </div>
-      <div>
-        <p>バンドマッチにログインしてください。</p>
-        <button id="login-button" class="btn btn-primary"><i class="fas fa-sign-in-alt"></i> ログイン</button>
-      </div>
+      <form id="loginForm">
+        <div class="form-group">
+          <label for="nickname">ニックネーム</label>
+          <input type="text" id="nickname" required placeholder="ニックネームを入力">
+        </div>
+        <div class="form-group">
+          <label for="circleName">サークル名</label>
+          <input type="text" id="circleName" required placeholder="サークル名を入力">
+        </div>
+        <button type="submit" class="btn btn-primary" id="login-button"><i class="fas fa-sign-in-alt"></i> ログイン</button>
+      </form>
     </div>
   </div>
   
@@ -639,12 +651,12 @@
       measurementId: "G-PND9Z1DJZD"
     };
 
-    // Firebaseアプリの初期化とFirestoreの取得
+    // Firebaseアプリの初期化とFirestore、Authの取得
     const app = initializeApp(firebaseConfig);
     const db = getFirestore(app);
     const auth = getAuth(app);
 
-    // モーダル開閉用関数
+    // モーダルの開閉用関数（既存）
     function openModal(modalId) {
       document.getElementById(modalId).classList.add('active');
       document.body.classList.add('modal-open');
@@ -657,8 +669,22 @@
         resetForm();
       }
     }
-    
-    // DOMContentLoaded以降の処理
+
+    // トースト通知の表示（既存／後でlogin側からも利用）
+    function showToast(message, isError = false) {
+      const existingToast = document.querySelector('.toast');
+      if (existingToast) {
+        existingToast.remove();
+      }
+      const toast = document.createElement('div');
+      toast.className = isError ? 'toast error' : 'toast';
+      toast.textContent = message;
+      document.body.appendChild(toast);
+      setTimeout(() => {
+        toast.remove();
+      }, 3000);
+    }
+
     document.addEventListener("DOMContentLoaded", function () {
       const projectList = document.getElementById("projectList");
       const projectModal = document.getElementById("project-modal");
@@ -816,7 +842,7 @@
               showToast("バンドを削除しました");
               closeModal('delete-confirm-modal');
             } catch (error) {
-              showToast("削除中にエラーが発生しました", true);
+              showToast(error.message, true);
               console.error("削除エラー:", error);
             }
           } else {
@@ -880,25 +906,10 @@
           closeModal('project-modal');
           resetForm();
         } catch (error) {
-          showToast("エラーが発生しました", true);
+          showToast(error.message, true);
           console.error("保存エラー:", error);
         }
       });
-      
-      // トースト通知の表示
-      function showToast(message, isError = false) {
-        const existingToast = document.querySelector('.toast');
-        if (existingToast) {
-          existingToast.remove();
-        }
-        const toast = document.createElement('div');
-        toast.className = isError ? 'toast error' : 'toast';
-        toast.textContent = message;
-        document.body.appendChild(toast);
-        setTimeout(() => {
-          toast.remove();
-        }, 3000);
-      }
       
       // 検索機能：曲名、作成者、ライブ名、募集楽器の情報でヒットさせる
       searchInput.addEventListener("input", () => {
@@ -920,7 +931,7 @@
     // 認証状態の監視と匿名ログイン
     onAuthStateChanged(auth, (user) => {
       if (user) {
-        // 認証済みならログインモーダルを閉じる
+        // ログイン済みならログインモーダルを閉じる
         closeModal('login-modal');
       } else {
         // 未認証の場合はログインモーダルを表示
@@ -928,12 +939,23 @@
       }
     });
 
-    // ログインボタンの処理
-    document.getElementById('login-button').addEventListener("click", async () => {
+    // ログインフォームの処理（ニックネームとサークル名のバリデーションを追加）
+    document.getElementById('loginForm').addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const nickname = document.getElementById('nickname').value.trim();
+      const circleName = document.getElementById('circleName').value.trim();
+      if (!nickname) {
+        showToast("ニックネームを入力してください", true);
+        return;
+      }
+      if (circleName !== "ヨコシマ。") {
+        showToast("サークル名が正しくありません", true);
+        return;
+      }
       try {
         await signInAnonymously(auth);
       } catch (error) {
-        showToast("ログインエラーが発生しました", true);
+        showToast(error.message, true);
         console.error("匿名ログインエラー:", error);
       }
     });
