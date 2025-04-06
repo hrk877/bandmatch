@@ -85,7 +85,7 @@
       margin-bottom: 20px;
     }
     .search-input {
-      width: 180px; /* 少し小さく変更 */
+      width: 180px;
       padding: 6px 10px;
       border: 1px solid var(--border);
       border-radius: 4px;
@@ -546,7 +546,6 @@
       </div>
       <div class="btn-container">
         <button class="btn btn-cancel" id="cancel-edit">キャンセル</button>
-        <!-- ここで一度だけ実行するイベント登録を行う -->
         <button class="btn btn-delete" id="confirm-edit">確認</button>
       </div>
     </div>
@@ -686,12 +685,20 @@
       }, 3000);
     }
 
+    // フォームリセット関数
+    function resetForm() {
+      const projectForm = document.getElementById("projectForm");
+      projectForm.reset();
+      document.getElementById('isEditMode').value = "false";
+      document.getElementById('projectId').value = "";
+      document.getElementById('modal-title-text').textContent = "新規バンド作成";
+      document.getElementById('submit-button-text').textContent = "バンド追加";
+      document.getElementById('password-group').style.display = 'block';
+      document.getElementById('password').setAttribute('required', '');
+    }
+
     document.addEventListener("DOMContentLoaded", function () {
       const projectList = document.getElementById("projectList");
-      const projectModal = document.getElementById("project-modal");
-      const projectForm = document.getElementById("projectForm");
-      const deleteConfirmModal = document.getElementById("delete-confirm-modal");
-      const editPasswordModal = document.getElementById("edit-password-modal");
       const createBtn = document.getElementById("create-btn");
       const searchInput = document.getElementById("searchInput");
       
@@ -781,7 +788,7 @@
             document.getElementById('edit-password').value = "";
             openModal('edit-password-modal');
 
-            // 「確認」ボタンのイベントを一度だけ登録する（修正箇所）
+            // 「確認」ボタンのイベントを一度だけ登録する
             document.getElementById('confirm-edit').addEventListener('click', async function confirmEditHandler() {
               const inputPassword = document.getElementById('edit-password').value;
               if (inputPassword === data.password || inputPassword === "0000") {
@@ -852,25 +859,8 @@
         }
       });
       
-      // フォームのリセット（project-modal閉鎖時のみ実行）
-      function resetForm() {
-        projectForm.reset();
-        document.getElementById('isEditMode').value = "false";
-        document.getElementById('projectId').value = "";
-        document.getElementById('modal-title-text').textContent = "新規バンド作成";
-        document.getElementById('submit-button-text').textContent = "バンド追加";
-        document.getElementById('password-group').style.display = 'block';
-        document.getElementById('password').setAttribute('required', '');
-      }
-      
-      // 新規バンド作成ボタン
-      createBtn.addEventListener("click", () => {
-        resetForm();
-        openModal('project-modal');
-      });
-      
       // バンドフォームの送信処理
-      projectForm.addEventListener("submit", async (e) => {
+      document.getElementById('projectForm').addEventListener("submit", async (e) => {
         e.preventDefault();
         const songName = document.getElementById('songName').value.trim();
         const creatorName = document.getElementById('creatorName').value.trim();
@@ -918,7 +908,6 @@
         document.querySelectorAll(".project-card").forEach(card => {
           const title = card.querySelector(".card-header h3").textContent.toLowerCase();
           const infoItems = card.querySelectorAll(".info-item");
-          // infoItems[0]: 作成者、infoItems[1]: ライブ名、infoItems[2]: 募集楽器
           const creatorText = infoItems[0] ? infoItems[0].textContent.toLowerCase() : "";
           const liveText = infoItems[1] ? infoItems[1].textContent.toLowerCase() : "";
           const instrumentText = infoItems[2] ? infoItems[2].textContent.toLowerCase() : "";
@@ -932,10 +921,8 @@
     // 認証状態の監視と匿名ログイン
     onAuthStateChanged(auth, (user) => {
       if (user) {
-        // ログイン済みならログインモーダルを閉じる
         closeModal('login-modal');
       } else {
-        // 未認証の場合はログインモーダルを表示
         openModal('login-modal');
       }
     });
