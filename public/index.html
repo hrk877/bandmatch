@@ -6,18 +6,19 @@
   <title>バンドマッチ</title>
 
   <!-- Open Graph meta tags -->
-  <meta property="og:title" content="バンドマッチ">
-  <meta property="og:description" content="メンバー探しがもっとラクに、サークル向けマッチングサイト！">
-  <meta property="og:image" content="https://bandmatch.vercel.app/icon.png">
-  <meta property="og:url" content="https://bandmatch-877.web.app/">
-  <meta property="og:type" content="website">
+<meta property="og:title" content="バンドマッチ">
+<meta property="og:description" content="メンバー探しがもっとラクに、サークル向けマッチングサイト！">
+<meta property="og:image" content="https://bandmatch.vercel.app/icon.png">
+<meta property="og:url" content="https://bandmatch-877.web.app/">
+<meta property="og:type" content="website">
 
-  <!-- Twitter Card meta tags -->
-  <meta name="twitter:card" content="summary_large_image">
-  <meta name="twitter:title" content="バンドマッチ">
-  <meta name="twitter:description" content="メンバー探しがもっとラクに、サークル向けマッチングサイト！">
-  <meta name="twitter:image" content="https://bandmatch.vercel.app/icon.png">
+<!-- Twitter Card meta tags -->
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="バンドマッチ">
+<meta name="twitter:description" content="メンバー探しがもっとラクに、サークル向けマッチングサイト！">
+<meta name="twitter:image" content="https://bandmatch.vercel.app/icon.png">
 
+  
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
   <style>
     /* リセットとベース */
@@ -445,29 +446,29 @@
   </style>
 </head>
 <body>
-  <header>
-    <h1 class="site-title">バンドマッチ</h1>
-  </header>
-
-  <!-- ログインモーダル（セキュリティ機能追加） -->
+  <!-- 追加: ログイン用モーダル（既存UIと同様の洗練されたデザイン） -->
   <div id="login-modal" class="modal active">
     <div class="modal-content">
       <div class="modal-header">
-        <h2 class="modal-title"><i class="fas fa-user"></i> ログイン</h2>
+        <h2 class="modal-title"><i class="fas fa-user-circle"></i> ログイン</h2>
       </div>
       <form id="loginForm">
         <div class="form-group">
           <label for="nickname">ニックネーム <span class="required">*</span></label>
-          <input type="text" id="nickname" required placeholder="例: 10期たろう">
+          <input type="text" id="nickname" maxlength="10" required placeholder="例: ユーザー名">
         </div>
         <div class="form-group">
-          <label for="circleName">サークル名 <span class="required">*</span></label>
-          <input type="text" id="circleName" required placeholder="例: ヨコシマ。">
+          <label for="circleName">サークル名 (ヨコシマ。) <span class="required">*</span></label>
+          <input type="text" id="circleName" maxlength="10" required placeholder="ヨコシマ。">
         </div>
         <button type="submit" class="btn btn-primary"><i class="fas fa-sign-in-alt"></i> ログイン</button>
       </form>
     </div>
   </div>
+  
+  <header>
+    <h1 class="site-title">バンドマッチ</h1>
+  </header>
   
   <div class="container">
     <div style="display: flex; justify-content: space-between; align-items: center;">
@@ -566,6 +567,9 @@
     </div>
   </div>
   
+  <!-- バンド作成ボタン -->
+  <button id="create-btn"><i class="fas fa-plus"></i></button>
+  
   <!-- モーダル: プライバシーポリシー -->
   <div id="policy-modal" class="modal">
     <div class="modal-content">
@@ -617,12 +621,20 @@
     </div>
   </div>
   
-  <!-- バンド作成ボタン -->
-  <button id="create-btn"><i class="fas fa-plus"></i></button>
-  
+  <!-- フッター（常に下部に小さく表示） -->
+  <footer class="footer">
+    <div class="footer-content">
+      <p>&copy; 2025 バンドマッチ</p>
+      <a href="#policy-modal" class="footer-link">プライバシーポリシー</a>
+      <a href="#faq-modal" class="footer-link">FAQ</a>
+      <a href="mailto:hrkr422@gmail.com" class="footer-link">お問い合わせ</a>
+    </div>
+  </footer>
+
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
     import { getFirestore, collection, addDoc, onSnapshot, doc, deleteDoc, updateDoc, getDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+    import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 
     // Firebaseの設定
     const firebaseConfig = {
@@ -638,36 +650,24 @@
     // Firebaseアプリの初期化とFirestoreの取得
     const app = initializeApp(firebaseConfig);
     const db = getFirestore(app);
+    const auth = getAuth(app);
 
-    document.addEventListener("DOMContentLoaded", function () {
-      // ログイン認証用の処理
-      const loginModal = document.getElementById('login-modal');
-      const loginForm = document.getElementById('loginForm');
-
-      // 既にログイン済みかをチェック（localStorage）
-      if (!localStorage.getItem('loggedIn')) {
-        loginModal.classList.add('active');
-        document.body.classList.add('modal-open');
-      } else {
-        loginModal.classList.remove('active');
-        document.body.classList.remove('modal-open');
+    // ログイン用モーダルのopen/close関数（既存の関数と同様の実装）
+    function openModal(modalId) {
+      document.getElementById(modalId).classList.add('active');
+      document.body.classList.add('modal-open');
+    }
+    
+    function closeModal(modalId) {
+      document.getElementById(modalId).classList.remove('active');
+      document.body.classList.remove('modal-open');
+      if(modalId === 'project-modal'){
+        resetForm();
       }
+    }
 
-      loginForm.addEventListener("submit", (e) => {
-        e.preventDefault();
-        const nickname = document.getElementById('nickname').value.trim();
-        const circleName = document.getElementById('circleName').value.trim();
-        if (!nickname || !circleName) {
-          showToast("すべての項目を入力してください", true);
-          return;
-        }
-        localStorage.setItem('loggedIn', true);
-        localStorage.setItem('nickname', nickname);
-        localStorage.setItem('circleName', circleName);
-        loginModal.classList.remove('active');
-        document.body.classList.remove('modal-open');
-      });
-
+    // DOM読み込み完了時の処理
+    document.addEventListener("DOMContentLoaded", function () {
       const projectList = document.getElementById("projectList");
       const projectModal = document.getElementById("project-modal");
       const projectForm = document.getElementById("projectForm");
@@ -677,20 +677,6 @@
       const searchInput = document.getElementById("searchInput");
       
       let currentProjectId = null;
-      
-      // モーダルの開閉（project-modal のみフォームをリセット）
-      function openModal(modalId) {
-        document.getElementById(modalId).classList.add('active');
-        document.body.classList.add('modal-open');
-      }
-      
-      function closeModal(modalId) {
-        document.getElementById(modalId).classList.remove('active');
-        document.body.classList.remove('modal-open');
-        if(modalId === 'project-modal'){
-          resetForm();
-        }
-      }
       
       // すべてのモーダルクローズボタン
       document.querySelectorAll('.modal-close').forEach(btn => {
@@ -937,6 +923,43 @@
       });
       
       loadProjects();
+    });
+
+    // Firebase Auth: ユーザーの認証状態を監視し、未認証の場合はログインモーダルを表示
+    onAuthStateChanged(auth, (user) => {
+      if (user) {
+        // ログイン済みならログイン用モーダルを閉じる
+        document.getElementById("login-modal").classList.remove("active");
+        document.body.classList.remove("modal-open");
+      } else {
+        openModal("login-modal");
+      }
+    });
+
+    // ログインフォームの送信処理
+    document.getElementById("loginForm").addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const nickname = document.getElementById("nickname").value.trim();
+      const circleName = document.getElementById("circleName").value.trim();
+      if (!nickname || !circleName) {
+        showToast("全ての項目を入力してください", true);
+        return;
+      }
+      // サークル名は必ず「ヨコシマ。」でなければならない
+      if (circleName !== "ヨコシマ。") {
+        showToast("サークル名が正しくありません", true);
+        return;
+      }
+      try {
+        await signInAnonymously(auth);
+        // 必要に応じてニックネームをローカルストレージなどに保存
+        localStorage.setItem("nickname", nickname);
+        showToast("ログインしました");
+        closeModal("login-modal");
+      } catch (error) {
+        showToast("ログインに失敗しました", true);
+        console.error("ログインエラー:", error);
+      }
     });
   </script>
 </body>
