@@ -546,6 +546,19 @@
     </div>
   </div>
   
+  <!-- ログインモーダル（新規追加） -->
+  <div id="login-modal" class="modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2 class="modal-title"><i class="fas fa-sign-in-alt"></i> ログイン</h2>
+      </div>
+      <div>
+        <p>バンドマッチにログインしてください。</p>
+        <button id="login-button" class="btn btn-primary"><i class="fas fa-sign-in-alt"></i> ログイン</button>
+      </div>
+    </div>
+  </div>
+  
   <!-- バンド作成ボタン -->
   <button id="create-btn"><i class="fas fa-plus"></i></button>
   
@@ -610,13 +623,12 @@
     </div>
   </footer>
 
-  <!-- ここから下は認証用の追加コードです。送っていただいたUI部分は一切変更していません。 -->
   <script type="module">
-    // Firebase Auth用モジュールのインポート
-    import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-    
-    // 既存のFirebase設定（Firestore等のための設定と同じものを使用）
+    import { getFirestore, collection, addDoc, onSnapshot, doc, deleteDoc, updateDoc, getDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+    import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+
+    // Firebaseの設定
     const firebaseConfig = {
       apiKey: "AIzaSyDe8W8YUhedHUesbZwGQWLKAA7Yz2mDmWI",
       authDomain: "bandmatch-877.firebaseapp.com",
@@ -626,34 +638,27 @@
       appId: "1:338150052178:web:6338b33129d515e2a06a8b",
       measurementId: "G-PND9Z1DJZD"
     };
-    
-    // Firebaseアプリの初期化（もしすでに初期化されている場合は再初期化されません）
+
+    // Firebaseアプリの初期化とFirestoreの取得
     const app = initializeApp(firebaseConfig);
-    const auth = getAuth(app);
-    
-    // 認証状態を監視して、未認証の場合は匿名認証を実施
-    onAuthStateChanged(auth, (user) => {
-      if (!user) {
-        signInAnonymously(auth)
-          .then(() => {
-            console.log("匿名認証に成功しました。");
-          })
-          .catch((error) => {
-            console.error("匿名認証エラー:", error);
-          });
-      } else {
-        console.log("ユーザー認証済み:", user.uid);
-      }
-    });
-  </script>
-
-  <!-- 既存のコード：FirestoreとUI操作 -->
-  <script type="module">
-    import { getFirestore, collection, addDoc, onSnapshot, doc, deleteDoc, updateDoc, getDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
-
-    // Firestoreの取得
     const db = getFirestore(app);
+    const auth = getAuth(app);
 
+    // モーダル開閉用関数
+    function openModal(modalId) {
+      document.getElementById(modalId).classList.add('active');
+      document.body.classList.add('modal-open');
+    }
+    
+    function closeModal(modalId) {
+      document.getElementById(modalId).classList.remove('active');
+      document.body.classList.remove('modal-open');
+      if(modalId === 'project-modal'){
+        resetForm();
+      }
+    }
+    
+    // DOMContentLoaded以降の処理
     document.addEventListener("DOMContentLoaded", function () {
       const projectList = document.getElementById("projectList");
       const projectModal = document.getElementById("project-modal");
@@ -664,20 +669,6 @@
       const searchInput = document.getElementById("searchInput");
       
       let currentProjectId = null;
-      
-      // モーダルの開閉（project-modal のみフォームをリセット）
-      function openModal(modalId) {
-        document.getElementById(modalId).classList.add('active');
-        document.body.classList.add('modal-open');
-      }
-      
-      function closeModal(modalId) {
-        document.getElementById(modalId).classList.remove('active');
-        document.body.classList.remove('modal-open');
-        if(modalId === 'project-modal'){
-          resetForm();
-        }
-      }
       
       // すべてのモーダルクローズボタン
       document.querySelectorAll('.modal-close').forEach(btn => {
@@ -924,6 +915,27 @@
       });
       
       loadProjects();
+    });
+
+    // 認証状態の監視と匿名ログイン
+    onAuthStateChanged(auth, (user) => {
+      if (user) {
+        // 認証済みならログインモーダルを閉じる
+        closeModal('login-modal');
+      } else {
+        // 未認証の場合はログインモーダルを表示
+        openModal('login-modal');
+      }
+    });
+
+    // ログインボタンの処理
+    document.getElementById('login-button').addEventListener("click", async () => {
+      try {
+        await signInAnonymously(auth);
+      } catch (error) {
+        showToast("ログインエラーが発生しました", true);
+        console.error("匿名ログインエラー:", error);
+      }
     });
   </script>
 </body>
