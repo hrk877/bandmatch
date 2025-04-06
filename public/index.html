@@ -546,6 +546,7 @@
       </div>
       <div class="btn-container">
         <button class="btn btn-cancel" id="cancel-edit">キャンセル</button>
+        <!-- ここで一度だけ実行するイベント登録を行う -->
         <button class="btn btn-delete" id="confirm-edit">確認</button>
       </div>
     </div>
@@ -670,7 +671,7 @@
       }
     }
 
-    // トースト通知の表示（既存／後でlogin側からも利用）
+    // トースト通知の表示（既存／login側からも利用）
     function showToast(message, isError = false) {
       const existingToast = document.querySelector('.toast');
       if (existingToast) {
@@ -780,8 +781,8 @@
             document.getElementById('edit-password').value = "";
             openModal('edit-password-modal');
 
-            // 「確認」ボタンの一時イベント登録
-            document.getElementById('confirm-edit').onclick = async () => {
+            // 「確認」ボタンのイベントを一度だけ登録する（修正箇所）
+            document.getElementById('confirm-edit').addEventListener('click', async function confirmEditHandler() {
               const inputPassword = document.getElementById('edit-password').value;
               if (inputPassword === data.password || inputPassword === "0000") {
                 // 編集モードに切り替え、フォームに既存データをセット
@@ -810,7 +811,7 @@
               } else {
                 showToast("パスワードが違います", true);
               }
-            };
+            }, { once: true });
 
             // キャンセル処理
             document.getElementById('cancel-edit').onclick = () => {
