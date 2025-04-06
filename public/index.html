@@ -6,19 +6,18 @@
   <title>バンドマッチ</title>
 
   <!-- Open Graph meta tags -->
-<meta property="og:title" content="バンドマッチ">
-<meta property="og:description" content="メンバー探しがもっとラクに、サークル向けマッチングサイト！">
-<meta property="og:image" content="https://bandmatch.vercel.app/icon.png">
-<meta property="og:url" content="https://bandmatch-877.web.app/">
-<meta property="og:type" content="website">
+  <meta property="og:title" content="バンドマッチ">
+  <meta property="og:description" content="メンバー探しがもっとラクに、サークル向けマッチングサイト！">
+  <meta property="og:image" content="https://bandmatch.vercel.app/icon.png">
+  <meta property="og:url" content="https://bandmatch-877.web.app/">
+  <meta property="og:type" content="website">
 
-<!-- Twitter Card meta tags -->
-<meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:title" content="バンドマッチ">
-<meta name="twitter:description" content="メンバー探しがもっとラクに、サークル向けマッチングサイト！">
-<meta name="twitter:image" content="https://bandmatch.vercel.app/icon.png">
+  <!-- Twitter Card meta tags -->
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="バンドマッチ">
+  <meta name="twitter:description" content="メンバー探しがもっとラクに、サークル向けマッチングサイト！">
+  <meta name="twitter:image" content="https://bandmatch.vercel.app/icon.png">
 
-  
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
   <style>
     /* リセットとベース */
@@ -611,11 +610,13 @@
     </div>
   </footer>
 
+  <!-- ここから下は認証用の追加コードです。送っていただいたUI部分は一切変更していません。 -->
   <script type="module">
+    // Firebase Auth用モジュールのインポート
+    import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-    import { getFirestore, collection, addDoc, onSnapshot, doc, deleteDoc, updateDoc, getDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
-
-    // Firebaseの設定
+    
+    // 既存のFirebase設定（Firestore等のための設定と同じものを使用）
     const firebaseConfig = {
       apiKey: "AIzaSyDe8W8YUhedHUesbZwGQWLKAA7Yz2mDmWI",
       authDomain: "bandmatch-877.firebaseapp.com",
@@ -625,9 +626,32 @@
       appId: "1:338150052178:web:6338b33129d515e2a06a8b",
       measurementId: "G-PND9Z1DJZD"
     };
-
-    // Firebaseアプリの初期化とFirestoreの取得
+    
+    // Firebaseアプリの初期化（もしすでに初期化されている場合は再初期化されません）
     const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    
+    // 認証状態を監視して、未認証の場合は匿名認証を実施
+    onAuthStateChanged(auth, (user) => {
+      if (!user) {
+        signInAnonymously(auth)
+          .then(() => {
+            console.log("匿名認証に成功しました。");
+          })
+          .catch((error) => {
+            console.error("匿名認証エラー:", error);
+          });
+      } else {
+        console.log("ユーザー認証済み:", user.uid);
+      }
+    });
+  </script>
+
+  <!-- 既存のコード：FirestoreとUI操作 -->
+  <script type="module">
+    import { getFirestore, collection, addDoc, onSnapshot, doc, deleteDoc, updateDoc, getDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+
+    // Firestoreの取得
     const db = getFirestore(app);
 
     document.addEventListener("DOMContentLoaded", function () {
