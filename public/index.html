@@ -464,7 +464,8 @@
         <div class="form-group" id="privacy-agreement" style="display: flex; align-items: center; gap: 8px; flex-wrap: nowrap;">
           <input type="checkbox" id="agreePolicy" required style="width: auto;">
           <label for="agreePolicy" style="white-space: nowrap; margin: 0; padding: 0;">
-            <a href="#policy-modal" style="color: var(--primary); text-decoration: underline;">プライバシーポリシー</a>に同意します
+            <!-- ログイン画面用のプライバシーポリシーリンクに専用IDを設定 -->
+            <a id="login-privacy-link" href="#policy-modal" style="color: var(--primary); text-decoration: underline;">プライバシーポリシー</a>に同意します
           </label>
         </div>
         <button type="submit" class="btn btn-primary"><i class="fas fa-sign-in-alt"></i> ログイン</button>
@@ -658,6 +659,15 @@
     const db = getFirestore(app);
     const auth = getAuth(app);
 
+    // グローバルフラグ（ログインモーダル内からプライバシーポリシーを開いたかどうか）とログイン状態
+    let loginPolicyOpenedFromLogin = false;
+    let userLoggedIn = false;
+
+    // ログイン用プライバシーポリシーリンククリック時にフラグをON
+    document.getElementById("login-privacy-link").addEventListener("click", () => {
+      loginPolicyOpenedFromLogin = true;
+    });
+
     // resetForm をグローバルに定義
     function resetForm() {
       const projectForm = document.getElementById('projectForm');
@@ -681,6 +691,16 @@
       document.body.classList.remove('modal-open');
       if(modalId === 'project-modal'){
         resetForm();
+      }
+      
+      // プライバシーポリシーモーダルを閉じた場合の処理
+      if(modalId === 'policy-modal') {
+        if(loginPolicyOpenedFromLogin && !userLoggedIn) {
+          // ログイン前の場合はログインモーダルを再表示
+          openModal("login-modal");
+        }
+        // フラグをリセット
+        loginPolicyOpenedFromLogin = false;
       }
     }
 
@@ -926,10 +946,13 @@
 
     // Firebase Auth: ログイン状態の監視
     onAuthStateChanged(auth, (user) => {
+      userLoggedIn = !!user;
       if (user) {
+        // ログイン済みならログインモーダルは閉じる
         document.getElementById("login-modal").classList.remove("active");
         document.body.classList.remove("modal-open");
       } else {
+        // 未ログインの場合はログインモーダルを表示
         openModal("login-modal");
       }
     });
