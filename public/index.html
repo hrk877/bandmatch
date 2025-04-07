@@ -460,7 +460,7 @@
           <label for="circleName">サークル名<span class="required">*</span></label>
           <input type="text" id="circleName" maxlength="10">
         </div>
-        <!-- プライバシーポリシー同意チェックボックスの追加 -->
+        <!-- プライバシーポリシー同意チェックボックス -->
         <div class="form-group" id="privacy-agreement" style="display: flex; align-items: center; gap: 8px; flex-wrap: nowrap;">
           <input type="checkbox" id="agreePolicy" required style="width: auto;">
           <label for="agreePolicy" style="white-space: nowrap; margin: 0; padding: 0;">
@@ -663,9 +663,11 @@
     let loginPolicyOpenedFromLogin = false;
     let userLoggedIn = false;
 
-    // ログイン用プライバシーポリシーリンククリック時にフラグをON
-    document.getElementById("login-privacy-link").addEventListener("click", () => {
+    // ログイン用プライバシーポリシーリンクのクリック時処理（修正済み）
+    document.getElementById("login-privacy-link").addEventListener("click", (e) => {
+      e.preventDefault();
       loginPolicyOpenedFromLogin = true;
+      openModal("policy-modal");
     });
 
     // resetForm をグローバルに定義
@@ -981,7 +983,7 @@
       }
     });
 
-    // ログインフォーム送信前に「プライバシーポリシー同意」のチェックを確認（キャプチャ段階で先に処理）
+    // ログインフォーム送信前に「プライバシーポリシー同意」のチェックを確認
     document.getElementById("loginForm").addEventListener("submit", function(e) {
       if (!document.getElementById("agreePolicy").checked) {
         e.preventDefault();
