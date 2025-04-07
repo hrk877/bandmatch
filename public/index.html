@@ -855,6 +855,10 @@
         const instruments = selectedInstruments.length > 0 ? selectedInstruments.join(', ') : "なし";
         const isEditMode = document.getElementById('isEditMode').value === "true";
         
+        // 追加：expireAt を作成（現在の日時から6ヶ月後）
+        const expireDate = new Date();
+        expireDate.setMonth(expireDate.getMonth() + 6);
+        
         try {
           if (isEditMode) {
             const projectId = document.getElementById('projectId').value;
@@ -863,7 +867,8 @@
               creatorName,
               liveName,
               instruments,
-              updatedAt: serverTimestamp()
+              updatedAt: serverTimestamp(),
+              expireAt: expireDate  // 更新時も expireAt を再設定
             });
             showToast("バンドを更新しました");
           } else {
@@ -874,7 +879,8 @@
               liveName,
               instruments,
               password,
-              createdAt: serverTimestamp()
+              createdAt: serverTimestamp(),
+              expireAt: expireDate  // 作成時に expireAt を設定
             });
             showToast("バンドを作成しました");
           }
