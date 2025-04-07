@@ -706,6 +706,25 @@
       }
     }
 
+    // モーダル内の×ボタンをクリック時、そのモーダルのIDを取得してcloseModalを呼び出す
+    document.querySelectorAll('.modal-close').forEach(btn => {
+      btn.addEventListener('click', function() {
+        const modal = btn.closest('.modal');
+        if(modal) {
+          closeModal(modal.id);
+        }
+      });
+    });
+      
+    // フッターリンクのイベントリスナー
+    document.querySelectorAll('.footer-link').forEach(link => {
+      link.addEventListener('click', (e) => {
+        e.preventDefault();
+        const target = link.getAttribute('href').substring(1);
+        openModal(target);
+      });
+    });
+
     // DOM読み込み完了時の処理
     document.addEventListener("DOMContentLoaded", function () {
       const projectList = document.getElementById("projectList");
@@ -714,26 +733,6 @@
       const searchInput = document.getElementById("searchInput");
       
       let currentProjectId = null;
-      
-      // すべてのモーダルクローズボタン
-      document.querySelectorAll('.modal-close').forEach(btn => {
-        btn.addEventListener('click', () => {
-          document.querySelectorAll('.modal').forEach(modal => {
-            modal.classList.remove('active');
-          });
-          document.body.classList.remove('modal-open');
-          resetForm();
-        });
-      });
-      
-      // フッターリンクのイベントリスナー
-      document.querySelectorAll('.footer-link').forEach(link => {
-        link.addEventListener('click', (e) => {
-          e.preventDefault();
-          const target = link.getAttribute('href').substring(1);
-          openModal(target);
-        });
-      });
       
       // 削除キャンセルボタン
       document.getElementById('cancel-delete').addEventListener('click', () => {
