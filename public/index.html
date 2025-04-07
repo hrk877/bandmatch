@@ -460,6 +460,13 @@
           <label for="circleName">サークル名<span class="required">*</span></label>
           <input type="text" id="circleName" maxlength="10">
         </div>
+        <!-- プライバシーポリシー同意チェックボックスの追加 -->
+        <div class="form-group" id="privacy-agreement" style="display: flex; align-items: center; gap: 8px; flex-wrap: nowrap;">
+          <input type="checkbox" id="agreePolicy" required style="width: auto;">
+          <label for="agreePolicy" style="white-space: nowrap; margin: 0; padding: 0;">
+            <a href="#policy-modal" style="color: var(--primary); text-decoration: underline;">プライバシーポリシー</a>に同意します
+          </label>
+        </div>
         <button type="submit" class="btn btn-primary"><i class="fas fa-sign-in-alt"></i> ログイン</button>
       </form>
     </div>
@@ -950,6 +957,14 @@
         console.error("ログインエラー:", error);
       }
     });
+
+    // ログインフォーム送信前に「プライバシーポリシー同意」のチェックを確認（キャプチャ段階で先に処理）
+    document.getElementById("loginForm").addEventListener("submit", function(e) {
+      if (!document.getElementById("agreePolicy").checked) {
+        e.preventDefault();
+        showToast("プライバシーポリシーに同意してください", true);
+      }
+    }, true);
   </script>
 </body>
 </html>
