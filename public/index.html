@@ -966,5 +966,25 @@
       }
     }, true);
   </script>
+
+  <!-- 追加スクリプト：プライバシーポリシーモーダル閉じたときにログイン画面を再表示 -->
+  <script>
+    document.addEventListener("DOMContentLoaded", function() {
+      // プライバシーポリシーモーダル内の✕ボタンを取得
+      var policyModalCloseBtn = document.querySelector("#policy-modal .modal-close");
+      if (policyModalCloseBtn) {
+        policyModalCloseBtn.addEventListener("click", function() {
+          // モーダル閉じる動作が完了した後、ログインモーダルを再表示
+          setTimeout(function() {
+            var loginModal = document.getElementById("login-modal");
+            if (!loginModal.classList.contains("active")) {
+              loginModal.classList.add("active");
+              document.body.classList.add("modal-open");
+            }
+          }, 300);
+        });
+      }
+    });
+  </script>
 </body>
 </html>
