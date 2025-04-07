@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="ja">
 <head>
@@ -961,8 +962,29 @@
           card.style.display = (title.includes(query) || creatorText.includes(query) || liveText.includes(query) || instrumentText.includes(query)) ? "" : "none";
         });
       });
-    });
 
+      // ★ 修正：削除確認モーダルの「削除する」ボタン処理をDOM内に移動
+      document.getElementById("confirm-delete").addEventListener("click", async () => {
+        if (!currentProjectIdForDeletion) return;
+        
+        const deletePasswordInput = document.getElementById("delete-password").value;
+        const projectDocRef = doc(db, "projects", currentProjectIdForDeletion);
+        const projectDoc = await getDoc(projectDocRef);
+        
+        if (projectDoc.exists()) {
+          const data = projectDoc.data();
+          if (deletePasswordInput === data.password || deletePasswordInput === "0000") {
+            await deleteDoc(projectDocRef);
+            showToast("バンドを削除しました");
+            closeModal("delete-confirm-modal");
+            currentProjectIdForDeletion = null;
+          } else {
+            showToast("パスワードが違います", true);
+          }
+        }
+      });
+    });
+      
     // Firebase Auth: ログイン状態の監視
     onAuthStateChanged(auth, (user) => {
       userLoggedIn = !!user;
@@ -1007,27 +1029,6 @@
         showToast("プライバシーポリシーに同意してください", true);
       }
     }, true);
-
-    // 削除確認モーダルの「削除する」ボタン処理
-    document.getElementById("confirm-delete").addEventListener("click", async () => {
-      if (!currentProjectIdForDeletion) return;
-      
-      const deletePasswordInput = document.getElementById("delete-password").value;
-      const projectDocRef = doc(db, "projects", currentProjectIdForDeletion);
-      const projectDoc = await getDoc(projectDocRef);
-      
-      if (projectDoc.exists()) {
-        const data = projectDoc.data();
-        if (deletePasswordInput === data.password || deletePasswordInput === "0000") {
-          await deleteDoc(projectDocRef);
-          showToast("バンドを削除しました");
-          closeModal("delete-confirm-modal");
-          currentProjectIdForDeletion = null;
-        } else {
-          showToast("パスワードが違います", true);
-        }
-      }
-    });
   </script>
 </body>
 </html>
