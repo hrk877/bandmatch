@@ -576,7 +576,7 @@
   <!-- バンド作成ボタン -->
   <button id="create-btn"><i class="fas fa-plus"></i></button>
   
-  <!-- プライバシーポリシーモーダル -->
+  <!-- プライバシーポリシーモーダル（改善版） -->
   <div id="policy-modal" class="modal">
     <div class="modal-content">
       <div class="modal-header">
@@ -584,59 +584,33 @@
         <button class="modal-close"><i class="fas fa-times"></i></button>
       </div>
       <div>
-        <p>当サイトにおけるプライバシーポリシーについて説明します。</p>
-        <h3>1. 収集する情報</h3>
-        <p>当サイトでは、バンド情報（曲名、作成者名、ライブ名、募集楽器）とパスワードを収集します。個人を特定できる情報は収集しておりません。</p>
-        <h3>2. 情報の利用目的</h3>
-        <p>収集した情報は、バンド管理サービスの提供のみに使用されます。第三者への提供は行いません。</p>
-        <h3>3. データの保護</h3>
-        <p>入力されたパスワードは、バンドの編集・削除の認証のみに使用されます。安全なパスワードの設定をお願いします。</p>
-        <h3>4. Cookie等の使用</h3>
-        <p>当サイトではFirebaseのサービスを使用しており、その過程でCookieが使用される場合があります。</p>
-        <h3>5. お問い合わせ</h3>
-        <p>プライバシーポリシーに関するお問い合わせは、下部のお問い合わせ先までご連絡ください。</p>
+        <p>本プライバシーポリシーは、当サイト「バンドマッチ」における個人情報の取り扱いについて定めるものです。ご利用前に必ずお読みください。</p>
+        <h3>1. 個人情報の取得方法</h3>
+        <p>当サイトは、ユーザーがログインする際にニックネームおよびサークル名を入力していただくほか、バンド作成時に曲名、作成者名、ライブ名、募集楽器、パスワード等の情報を収集します。これらの情報は、ユーザーの意思に基づいて自発的に提供されるものです。</p>
+        <h3>2. 個人情報の利用目的</h3>
+        <p>取得した情報は、以下の目的で利用されます：</p>
+        <ul>
+          <li>ユーザー認証およびログイン管理</li>
+          <li>バンド情報の作成、編集、削除および管理</li>
+          <li>サービス改善および利用状況の分析（Googleアナリティクスによるアクセス解析を含む）</li>
+        </ul>
+        <h3>3. 個人情報の第三者提供</h3>
+        <p>当サイトは、法令に基づく場合を除き、ユーザーの同意なく個人情報を第三者に提供することはありません。また、サービス向上のために集計した匿名情報を第三者と共有する場合がありますが、個人が特定される情報は含まれていません。</p>
+        <h3>4. Googleアナリティクス</h3>
+        <p>当サイトでは、Googleアナリティクスを使用してサイトの利用状況を把握し、サービス改善に努めています。収集されるデータは匿名化されており、個人を特定するものではありません。詳しくは、<a href="https://policies.google.com/privacy" target="_blank">Googleのプライバシーポリシー</a>をご参照ください。</p>
+        <h3>5. 免責事項</h3>
+        <p>当サイトは、ユーザーが入力した情報の正確性や最新性について保証するものではありません。また、当サイトの利用に起因するいかなる損害についても責任を負いかねますので、あらかじめご了承ください。</p>
+        <h3>6. 著作権・肖像権</h3>
+        <p>当サイトに掲載されるコンテンツ（テキスト、画像、デザイン等）の著作権および肖像権は、当サイトまたは正当な権利者に帰属します。無断転載、複製を禁じます。</p>
+        <h3>7. バンドデータの自動削除</h3>
+        <p>当サイトでは、作成されたバンド情報は作成日から半年経過した場合、自動的に削除される仕組みとなっております。常に最新の情報管理に努めています。</p>
+        <h3>8. お問い合わせ</h3>
+        <p>本プライバシーポリシーに関するお問い合わせは、下記の連絡先までお願いいたします。</p>
+        <p>メール: <a href="mailto:hrkr422@gmail.com">hrkr422@gmail.com</a></p>
       </div>
     </div>
   </div>
   
-  <!-- FAQモーダル -->
-  <div id="faq-modal" class="modal">
-    <div class="modal-content">
-      <div class="modal-header">
-        <h2 class="modal-title">FAQ</h2>
-        <button class="modal-close"><i class="fas fa-times"></i></button>
-      </div>
-      <div>
-        <div class="faq-item">
-          <div class="faq-question">Q: バンドはどのように作成すればいいですか？</div>
-          <div class="faq-answer">A: 右下のバンド作成ボタンからフォームを開き、各項目（曲名、作成者名、ライブ名、募集楽器、パスワード）を入力してください。</div>
-        </div>
-        <div class="faq-item">
-          <div class="faq-question">Q: パスワードを忘れてしまった場合はどうすればいいですか？</div>
-          <div class="faq-answer">A: 残念ながら、パスワードを忘れてしまった場合、バンドの編集・削除はできません。下部のお問い合わせ先までご連絡ください。</div>
-        </div>
-        <div class="faq-item">
-          <div class="faq-question">Q: 複数の楽器を募集することはできますか？</div>
-          <div class="faq-answer">A: はい、複数の楽器にチェックを入れることで、複数の楽器を募集できます。</div>
-        </div>
-        <div class="faq-item">
-          <div class="faq-question">Q: 一度追加したバンドを編集するにはどうすればいいですか？</div>
-          <div class="faq-answer">A: バンド一覧から該当のバンドの「編集」ボタンをクリックし、設定したパスワードを入力すると編集できます。</div>
-        </div>
-      </div>
-    </div>
-  </div>
-  
-  <!-- フッター -->
-  <footer class="footer">
-    <div class="footer-content">
-      <p>&copy; 2025 バンドマッチ</p>
-      <a href="#policy-modal" class="footer-link">プライバシーポリシー</a>
-      <a href="#faq-modal" class="footer-link">FAQ</a>
-      <a href="mailto:hrkr422@gmail.com" class="footer-link">お問い合わせ</a>
-    </div>
-  </footer>
-
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
     import { getFirestore, collection, addDoc, onSnapshot, doc, deleteDoc, updateDoc, getDoc, serverTimestamp, query, orderBy } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
