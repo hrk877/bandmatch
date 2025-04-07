@@ -453,7 +453,7 @@
       </div>
       <form id="loginForm">
         <div class="form-group">
-          <label for="nickname">ニックネーム<span class="required">*</span></label>
+          <label for="nickname">ニックネーム（本名は書かないでください） <span class="required">*</span></label>
           <input type="text" id="nickname" maxlength="10" required placeholder="例: 20期　たろう">
         </div>
         <div class="form-group">
@@ -464,7 +464,6 @@
         <div class="form-group" id="privacy-agreement" style="display: flex; align-items: center; gap: 8px; flex-wrap: nowrap;">
           <input type="checkbox" id="agreePolicy" required style="width: auto;">
           <label for="agreePolicy" style="white-space: nowrap; margin: 0; padding: 0;">
-            <!-- ログイン画面用のプライバシーポリシーリンク -->
             <a id="login-privacy-link" href="#policy-modal" style="color: var(--primary); text-decoration: underline;">プライバシーポリシー</a>に同意します
           </label>
         </div>
@@ -640,7 +639,7 @@
 
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-    import { getFirestore, collection, addDoc, onSnapshot, doc, deleteDoc, updateDoc, getDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+    import { getFirestore, collection, addDoc, onSnapshot, doc, deleteDoc, updateDoc, getDoc, serverTimestamp, query, orderBy } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
     import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 
     // Firebaseの設定
@@ -683,7 +682,7 @@
       document.getElementById('password').setAttribute('required', '');
     }
 
-    // openModal/closeModal（closeModal内でプライバシーポリシーの場合の処理）
+    // openModal/closeModal
     function openModal(modalId) {
       document.getElementById(modalId).classList.add('active');
       document.body.classList.add('modal-open');
@@ -704,7 +703,7 @@
       }
     }
 
-    // 各モーダル内の×ボタンは、所属モーダルのIDを取得してcloseModalを呼ぶ
+    // 各モーダルの×ボタン処理
     document.querySelectorAll('.modal-close').forEach(btn => {
       btn.addEventListener('click', function() {
         const modal = btn.closest('.modal');
@@ -714,7 +713,7 @@
       });
     });
       
-    // フッターリンクの処理
+    // フッターリンク処理
     document.querySelectorAll('.footer-link').forEach(link => {
       link.addEventListener('click', (e) => {
         e.preventDefault();
@@ -723,19 +722,28 @@
       });
     });
 
-    // バンド一覧のリスナーを設定する関数（グローバル化）
+    // バンド一覧リスナー設定（新しい順＆半年経過の自動削除）
     function loadProjects() {
-      onSnapshot(collection(db, "projects"), (snapshot) => {
+      const q = query(collection(db, "projects"), orderBy("createdAt", "desc"));
+      onSnapshot(q, (snapshot) => {
         const projectList = document.getElementById("projectList");
-        if (snapshot.empty) {
-          projectList.innerHTML = "<div class='empty-state'><i class='fas fa-music'></i><p>まだバンドがありません。<br>新しいバンドを作成しましょう！</p></div>";
-          return;
-        }
         projectList.innerHTML = "";
+        const sixMonthsAgo = new Date();
+        sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 6);
+        let validCount = 0;
         snapshot.forEach((docSnapshot) => {
           const project = docSnapshot.data();
+          // 自動削除：createdAtが存在し6ヶ月前より古い場合
+          if (project.createdAt && project.createdAt.toDate() < sixMonthsAgo) {
+            deleteDoc(doc(db, "projects", docSnapshot.id)).catch(err => console.error("Deletion error:", err));
+            return;
+          }
           displayProject(docSnapshot.id, project);
+          validCount++;
         });
+        if(validCount === 0) {
+          projectList.innerHTML = "<div class='empty-state'><i class='fas fa-music'></i><p>まだバンドがありません。<br>新しいバンドを作成しましょう！</p></div>";
+        }
       });
     }
 
@@ -773,7 +781,7 @@
         </div>
       `;
 
-      // 編集ボタン
+      // 編集ボタン処理
       projectCard.querySelector(".edit-btn").addEventListener("click", async () => {
         let currentProjectId = id;
         const projectDoc = await getDoc(doc(db, "projects", id));
@@ -818,7 +826,7 @@
         }
       });
 
-      // 削除ボタン
+      // 削除ボタン処理
       projectCard.querySelector(".delete-btn").addEventListener("click", () => {
         let currentProjectId = id;
         document.getElementById('delete-password').value = '';
@@ -828,13 +836,13 @@
       projectList.appendChild(projectCard);
     }
 
-    // DOMContentLoaded時の処理
+    // DOMContentLoaded時処理
     document.addEventListener("DOMContentLoaded", function () {
       const projectForm = document.getElementById("projectForm");
       const createBtn = document.getElementById("create-btn");
       const searchInput = document.getElementById("searchInput");
       
-      // 削除キャンセルボタン
+      // 削除キャンセル
       document.getElementById('cancel-delete').addEventListener('click', () => {
         closeModal('delete-confirm-modal');
       });
@@ -845,7 +853,7 @@
         openModal('project-modal');
       });
       
-      // バンドフォームの送信処理
+      // バンドフォーム送信処理
       projectForm.addEventListener("submit", async (e) => {
         e.preventDefault();
         const songName = document.getElementById('songName').value.trim();
@@ -913,17 +921,13 @@
           card.style.display = (title.includes(query) || creatorText.includes(query) || liveText.includes(query) || instrumentText.includes(query)) ? "" : "none";
         });
       });
-      
-      // ※ 初回は onAuthStateChanged でリスナーを設定するのでここでは loadProjects() は呼ばない
     });
 
     // Firebase Auth: ログイン状態の監視
     onAuthStateChanged(auth, (user) => {
       userLoggedIn = !!user;
       if (user) {
-        // ログイン済みならログインモーダルを閉じる
         closeModal("login-modal");
-        // リスナー未設定ならバンド一覧のリスナーを設定（これで他の人が作成したバンドも即表示）
         if (!projectsListenerSet) {
           loadProjects();
           projectsListenerSet = true;
@@ -933,7 +937,7 @@
       }
     });
 
-    // ログインフォームの送信処理
+    // ログインフォーム送信処理
     document.getElementById("loginForm").addEventListener("submit", async (e) => {
       e.preventDefault();
       const nickname = document.getElementById("nickname").value.trim();
