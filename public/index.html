@@ -6,19 +6,18 @@
   <title>バンドマッチ</title>
 
   <!-- Open Graph meta tags -->
-<meta property="og:title" content="バンドマッチ">
-<meta property="og:description" content="メンバー探しがもっとラクに、サークル向けマッチングサイト！">
-<meta property="og:image" content="https://bandmatch.vercel.app/icon.png">
-<meta property="og:url" content="https://bandmatch-877.web.app/">
-<meta property="og:type" content="website">
+  <meta property="og:title" content="バンドマッチ">
+  <meta property="og:description" content="メンバー探しがもっとラクに、サークル向けマッチングサイト！">
+  <meta property="og:image" content="https://bandmatch.vercel.app/icon.png">
+  <meta property="og:url" content="https://bandmatch-877.web.app/">
+  <meta property="og:type" content="website">
 
-<!-- Twitter Card meta tags -->
-<meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:title" content="バンドマッチ">
-<meta name="twitter:description" content="メンバー探しがもっとラクに、サークル向けマッチングサイト！">
-<meta name="twitter:image" content="https://bandmatch.vercel.app/icon.png">
+  <!-- Twitter Card meta tags -->
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="バンドマッチ">
+  <meta name="twitter:description" content="メンバー探しがもっとラクに、サークル向けマッチングサイト！">
+  <meta name="twitter:image" content="https://bandmatch.vercel.app/icon.png">
 
-  
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
   <style>
     /* リセットとベース */
@@ -81,12 +80,12 @@
       gap: 10px;
     }
     
-    /* 検索ボックス（シンプルなデザイン） */
+    /* 検索ボックス */
     .search-container {
       margin-bottom: 20px;
     }
     .search-input {
-      width: 180px; /* 少し小さく変更 */
+      width: 180px;
       padding: 6px 10px;
       border: 1px solid var(--border);
       border-radius: 4px;
@@ -208,7 +207,7 @@
     
     .toast.error { background-color: var(--danger); }
     
-    /* フッター（常に下部に小さく表示、一行レイアウトに変更） */
+    /* フッター */
     .footer {
       background-color: var(--secondary);
       color: white;
@@ -344,7 +343,7 @@
       box-shadow: 0 0 0 3px rgba(139, 0, 0, 0.2);
     }
     
-    /* チェックボックスのカスタムスタイル */
+    /* チェックボックス */
     .instrument-options {
       display: flex;
       flex-wrap: wrap;
@@ -435,7 +434,7 @@
       color: var(--primary);
     }
     
-    /* レスポンシブ対応 */
+    /* レスポンシブ */
     @media (max-width: 768px) {
       .site-title { font-size: 1.8rem; }
       .project-cards { grid-template-columns: 1fr; }
@@ -446,7 +445,7 @@
   </style>
 </head>
 <body>
-  <!-- 追加: ログイン用モーダル（既存UIと同様の洗練されたデザイン） -->
+  <!-- ログイン用モーダル -->
   <div id="login-modal" class="modal active">
     <div class="modal-content">
       <div class="modal-header">
@@ -570,7 +569,7 @@
   <!-- バンド作成ボタン -->
   <button id="create-btn"><i class="fas fa-plus"></i></button>
   
-  <!-- モーダル: プライバシーポリシー -->
+  <!-- プライバシーポリシーモーダル -->
   <div id="policy-modal" class="modal">
     <div class="modal-content">
       <div class="modal-header">
@@ -593,7 +592,7 @@
     </div>
   </div>
   
-  <!-- モーダル: FAQ -->
+  <!-- FAQモーダル -->
   <div id="faq-modal" class="modal">
     <div class="modal-content">
       <div class="modal-header">
@@ -621,7 +620,7 @@
     </div>
   </div>
   
-  <!-- フッター（常に下部に小さく表示） -->
+  <!-- フッター -->
   <footer class="footer">
     <div class="footer-content">
       <p>&copy; 2025 バンドマッチ</p>
@@ -633,7 +632,7 @@
 
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-    import { getFirestore, collection, addDoc, onSnapshot, doc, deleteDoc, updateDoc, getDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+    import { getFirestore, collection, addDoc, onSnapshot, doc, deleteDoc, updateDoc, getDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
     import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 
     // Firebaseの設定
@@ -647,12 +646,24 @@
       measurementId: "G-PND9Z1DJZD"
     };
 
-    // Firebaseアプリの初期化とFirestoreの取得
+    // FirebaseアプリとFirestore, Authの初期化
     const app = initializeApp(firebaseConfig);
     const db = getFirestore(app);
     const auth = getAuth(app);
 
-    // ログイン用モーダルのopen/close関数（既存の関数と同様の実装）
+    // resetForm をグローバルに定義
+    function resetForm() {
+      const projectForm = document.getElementById('projectForm');
+      projectForm.reset();
+      document.getElementById('isEditMode').value = "false";
+      document.getElementById('projectId').value = "";
+      document.getElementById('modal-title-text').textContent = "新規バンド作成";
+      document.getElementById('submit-button-text').textContent = "バンド追加";
+      document.getElementById('password-group').style.display = 'block';
+      document.getElementById('password').setAttribute('required', '');
+    }
+
+    // ログイン用モーダルのopen/close
     function openModal(modalId) {
       document.getElementById(modalId).classList.add('active');
       document.body.classList.add('modal-open');
@@ -669,10 +680,7 @@
     // DOM読み込み完了時の処理
     document.addEventListener("DOMContentLoaded", function () {
       const projectList = document.getElementById("projectList");
-      const projectModal = document.getElementById("project-modal");
       const projectForm = document.getElementById("projectForm");
-      const deleteConfirmModal = document.getElementById("delete-confirm-modal");
-      const editPasswordModal = document.getElementById("edit-password-modal");
       const createBtn = document.getElementById("create-btn");
       const searchInput = document.getElementById("searchInput");
       
@@ -758,15 +766,12 @@
           const projectDoc = await getDoc(doc(db, "projects", id));
           if (projectDoc.exists()) {
             const data = projectDoc.data();
-            // 編集用パスワード確認モーダルを表示
             document.getElementById('edit-password').value = "";
             openModal('edit-password-modal');
 
-            // 「確認」ボタンの一時イベント登録
             document.getElementById('confirm-edit').onclick = async () => {
               const inputPassword = document.getElementById('edit-password').value;
               if (inputPassword === data.password || inputPassword === "0000") {
-                // 編集モードに切り替え、フォームに既存データをセット
                 document.getElementById('isEditMode').value = "true";
                 document.getElementById('projectId').value = id;
                 document.getElementById('modal-title-text').textContent = "バンドを編集";
@@ -794,7 +799,6 @@
               }
             };
 
-            // キャンセル処理
             document.getElementById('cancel-edit').onclick = () => {
               closeModal('edit-password-modal');
             };
@@ -824,7 +828,7 @@
               showToast("バンドを削除しました");
               closeModal('delete-confirm-modal');
             } catch (error) {
-              showToast("削除中にエラーが発生しました", true);
+              showToast("削除中にエラーが発生しました: " + error.message, true);
               console.error("削除エラー:", error);
             }
           } else {
@@ -832,17 +836,6 @@
           }
         }
       });
-      
-      // フォームのリセット（project-modal閉鎖時のみ実行）
-      function resetForm() {
-        projectForm.reset();
-        document.getElementById('isEditMode').value = "false";
-        document.getElementById('projectId').value = "";
-        document.getElementById('modal-title-text').textContent = "新規バンド作成";
-        document.getElementById('submit-button-text').textContent = "バンド追加";
-        document.getElementById('password-group').style.display = 'block';
-        document.getElementById('password').setAttribute('required', '');
-      }
       
       // 新規バンド作成ボタン
       createBtn.addEventListener("click", () => {
@@ -870,7 +863,7 @@
               creatorName,
               liveName,
               instruments,
-              updatedAt: new Date()
+              updatedAt: serverTimestamp()
             });
             showToast("バンドを更新しました");
           } else {
@@ -881,14 +874,14 @@
               liveName,
               instruments,
               password,
-              createdAt: new Date()
+              createdAt: serverTimestamp()
             });
             showToast("バンドを作成しました");
           }
           closeModal('project-modal');
           resetForm();
         } catch (error) {
-          showToast("エラーが発生しました", true);
+          showToast("エラーが発生しました: " + error.message, true);
           console.error("保存エラー:", error);
         }
       });
@@ -908,13 +901,12 @@
         }, 3000);
       }
       
-      // 検索機能：曲名、作成者、ライブ名、募集楽器の情報でヒットさせる
+      // 検索機能
       searchInput.addEventListener("input", () => {
         const query = searchInput.value.toLowerCase();
         document.querySelectorAll(".project-card").forEach(card => {
           const title = card.querySelector(".card-header h3").textContent.toLowerCase();
           const infoItems = card.querySelectorAll(".info-item");
-          // infoItems[0]: 作成者、infoItems[1]: ライブ名、infoItems[2]: 募集楽器
           const creatorText = infoItems[0] ? infoItems[0].textContent.toLowerCase() : "";
           const liveText = infoItems[1] ? infoItems[1].textContent.toLowerCase() : "";
           const instrumentText = infoItems[2] ? infoItems[2].textContent.toLowerCase() : "";
@@ -925,10 +917,9 @@
       loadProjects();
     });
 
-    // Firebase Auth: ユーザーの認証状態を監視し、未認証の場合はログインモーダルを表示
+    // Firebase Auth: ログイン状態の監視
     onAuthStateChanged(auth, (user) => {
       if (user) {
-        // ログイン済みならログイン用モーダルを閉じる
         document.getElementById("login-modal").classList.remove("active");
         document.body.classList.remove("modal-open");
       } else {
@@ -945,19 +936,17 @@
         showToast("全ての項目を入力してください", true);
         return;
       }
-      // サークル名は必ず「ヨコシマ。」でなければならない
       if (circleName !== "ヨコシマ。") {
         showToast("サークル名が正しくありません", true);
         return;
       }
       try {
         await signInAnonymously(auth);
-        // 必要に応じてニックネームをローカルストレージなどに保存
         localStorage.setItem("nickname", nickname);
         showToast("ログインしました");
         closeModal("login-modal");
       } catch (error) {
-        showToast("ログインに失敗しました", true);
+        showToast("ログインに失敗しました: " + error.message, true);
         console.error("ログインエラー:", error);
       }
     });
