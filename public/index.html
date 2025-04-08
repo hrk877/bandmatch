@@ -980,7 +980,7 @@ document.querySelectorAll('.footer-link').forEach(link => {
         
         if (projectDoc.exists()) {
           const data = projectDoc.data();
-          if (deletePasswordInput === data.password || deletePasswordInput === "0000") {
+          if (deletePasswordInput === data.password || deletePasswordInput === "mizomizo877") {
             await deleteDoc(projectDocRef);
             showToast("バンドを削除しました");
             closeModal("delete-confirm-modal");
