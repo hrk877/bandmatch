@@ -761,15 +761,15 @@
     });
       
     // フッターリンク処理
-document.querySelectorAll('.footer-link').forEach(link => {
-  if (!link.getAttribute('href').startsWith('mailto:')) {  // mailtoリンクはスキップ
-    link.addEventListener('click', (e) => {
-      e.preventDefault();
-      const target = link.getAttribute('href').substring(1);
-      openModal(target);
+    document.querySelectorAll('.footer-link').forEach(link => {
+      if (!link.getAttribute('href').startsWith('mailto:')) {  // mailtoリンクはスキップ
+        link.addEventListener('click', (e) => {
+          e.preventDefault();
+          const target = link.getAttribute('href').substring(1);
+          openModal(target);
+        });
+      }
     });
-  }
-});
 
     // バンド一覧リスナー設定（新しい順＆半年経過の自動削除）
     function loadProjects() {
@@ -956,6 +956,8 @@ document.querySelectorAll('.footer-link').forEach(link => {
           toast.remove();
         }, 3000);
       }
+      // グローバルに公開してdisplayProjectからも利用可能にする
+      window.showToast = showToast;
       
       // 検索機能
       searchInput.addEventListener("input", () => {
