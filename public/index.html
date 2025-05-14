@@ -689,6 +689,26 @@
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
     import { getFirestore, collection, addDoc, onSnapshot, doc, deleteDoc, updateDoc, getDoc, serverTimestamp, query, orderBy } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
     import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+    // スクリプトのimport文の直後に追加
+    async function hashPassword(password) {
+    const encoder = new TextEncoder();
+    const data = encoder.encode(password);
+    const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+    const hashArray = Array.from(new Uint8Array(hashBuffer));
+    const hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+    return hashHex;
+    }
+
+    function escapeHtml(text) {
+    const map = {
+    '&': '&amp;',
+    '<': '&lt;',
+    '>': '&gt;',
+    '"': '&quot;',
+    "'": '&#039;'
+    };
+    return text.replace(/[&<>"']/g, function(m) { return map[m]; });
+    }
 
     // Firebaseの設定
     const firebaseConfig = {
@@ -809,29 +829,28 @@
       const creatorName = project.creatorName || "未設定";
 
       projectCard.innerHTML = `
-        <div class="card-header">
-          <h3>${project.songName}</h3>
-          <div class="card-actions">
-            <button class="edit-btn" title="編集"><i class="fas fa-edit"></i></button>
-            <button class="delete-btn" title="削除"><i class="fas fa-trash-alt"></i></button>
-          </div>
-        </div>
-        <div class="card-body">
-          <div class="info-item">
-            <i class="fas fa-user"></i>
-            <span>作成者: ${creatorName}</span>
-          </div>
-          <div class="info-item">
-            <i class="fas fa-microphone"></i>
-            <span>ライブ名: ${project.liveName}</span>
-          </div>
-          <div class="info-item">
-            <i class="fas fa-guitar"></i>
-            <span>${instrumentsList}</span>
-          </div>
-        </div>
-      `;
-
+  <div class="card-header">
+    <h3>${escapeHtml(project.songName)}</h3>
+    <div class="card-actions">
+      <button class="edit-btn" title="編集"><i class="fas fa-edit"></i></button>
+      <button class="delete-btn" title="削除"><i class="fas fa-trash-alt"></i></button>
+    </div>
+  </div>
+  <div class="card-body">
+    <div class="info-item">
+      <i class="fas fa-user"></i>
+      <span>作成者: ${escapeHtml(creatorName)}</span>
+    </div>
+    <div class="info-item">
+      <i class="fas fa-microphone"></i>
+      <span>ライブ名: ${escapeHtml(project.liveName)}</span>
+    </div>
+    <div class="info-item">
+      <i class="fas fa-guitar"></i>
+      <span>${escapeHtml(instrumentsList)}</span>
+    </div>
+  </div>
+`;
       // 編集ボタン処理
       projectCard.querySelector(".edit-btn").addEventListener("click", async () => {
         const projectDoc = await getDoc(doc(db, "projects", id));
@@ -841,34 +860,35 @@
           openModal('edit-password-modal');
 
           document.getElementById('confirm-edit').onclick = async () => {
-            const inputPassword = document.getElementById('edit-password').value;
-            if (inputPassword === data.password) {
-              document.getElementById('isEditMode').value = "true";
-              document.getElementById('projectId').value = id;
-              document.getElementById('modal-title-text').textContent = "バンドを編集";
-              document.getElementById('submit-button-text').textContent = "更新する";
-              document.getElementById('songName').value = data.songName;
-              document.getElementById('creatorName').value = data.creatorName || "";
-              document.getElementById('liveName').value = data.liveName;
-              document.getElementById('password-group').style.display = 'none';
-              document.getElementById('password').removeAttribute('required');
-              document.querySelectorAll('input[name="instrument"]').forEach(checkbox => {
-                checkbox.checked = false;
-              });
-              if (data.instruments) {
-                const instruments = data.instruments.split(', ');
-                instruments.forEach(instrument => {
-                  const checkbox = Array.from(document.querySelectorAll('input[name="instrument"]'))
-                    .find(cb => cb.value === instrument);
-                  if (checkbox) checkbox.checked = true;
-                });
-              }
-              closeModal('edit-password-modal');
-              openModal('project-modal');
-            } else {
-              showToast("パスワードが違います", true);
-            }
-          };
+  const inputPassword = document.getElementById('edit-password').value;
+  const hashedInputPassword = await hashPassword(inputPassword);
+  if (hashedInputPassword === data.password) {
+    document.getElementById('isEditMode').value = "true";
+    document.getElementById('projectId').value = id;
+    document.getElementById('modal-title-text').textContent = "バンドを編集";
+    document.getElementById('submit-button-text').textContent = "更新する";
+    document.getElementById('songName').value = data.songName;
+    document.getElementById('creatorName').value = data.creatorName || "";
+    document.getElementById('liveName').value = data.liveName;
+    document.getElementById('password-group').style.display = 'none';
+    document.getElementById('password').removeAttribute('required');
+    document.querySelectorAll('input[name="instrument"]').forEach(checkbox => {
+      checkbox.checked = false;
+    });
+    if (data.instruments) {
+      const instruments = data.instruments.split(', ');
+      instruments.forEach(instrument => {
+        const checkbox = Array.from(document.querySelectorAll('input[name="instrument"]'))
+          .find(cb => cb.value === instrument);
+        if (checkbox) checkbox.checked = true;
+      });
+    }
+    closeModal('edit-password-modal');
+    openModal('project-modal');
+  } else {
+    showToast("パスワードが違います", true);
+  }
+};
 
           document.getElementById('cancel-edit').onclick = () => {
             closeModal('edit-password-modal');
@@ -905,44 +925,70 @@
       
       // バンドフォーム送信処理
       projectForm.addEventListener("submit", async (e) => {
-        e.preventDefault();
-        const songName = document.getElementById('songName').value.trim();
-        const creatorName = document.getElementById('creatorName').value.trim();
-        const liveName = document.getElementById('liveName').value.trim();
-        const selectedInstruments = Array.from(document.querySelectorAll('input[name="instrument"]:checked')).map(cb => cb.value);
-        const instruments = selectedInstruments.length > 0 ? selectedInstruments.join(', ') : "なし";
-        const isEditMode = document.getElementById('isEditMode').value === "true";
-        
-        try {
-          if (isEditMode) {
-            const projectId = document.getElementById('projectId').value;
-            await updateDoc(doc(db, "projects", projectId), {
-              songName,
-              creatorName,
-              liveName,
-              instruments,
-              updatedAt: serverTimestamp()
-            });
-            showToast("バンドを更新しました");
-          } else {
-            const password = document.getElementById('password').value;
-            await addDoc(collection(db, "projects"), {
-              songName,
-              creatorName,
-              liveName,
-              instruments,
-              password,
-              createdAt: serverTimestamp()
-            });
-            showToast("バンドを作成しました");
-          }
-          closeModal('project-modal');
-          resetForm();
-        } catch (error) {
-          showToast("エラーが発生しました: " + error.message, true);
-          console.error("保存エラー:", error);
-        }
-      });
+  e.preventDefault();
+  const songName = document.getElementById('songName').value.trim();
+  const creatorName = document.getElementById('creatorName').value.trim();
+  const liveName = document.getElementById('liveName').value.trim();
+  const selectedInstruments = Array.from(document.querySelectorAll('input[name="instrument"]:checked')).map(cb => cb.value);
+  const instruments = selectedInstruments.length > 0 ? selectedInstruments.join(', ') : "なし";
+  const isEditMode = document.getElementById('isEditMode').value === "true";
+  
+  // 入力値検証
+  if (!songName || songName.length > 20) {
+    showToast("曲名は1〜20文字で入力してください", true);
+    return;
+  }
+  
+  if (!creatorName || creatorName.length > 20) {
+    showToast("作成者名は1〜20文字で入力してください", true);
+    return;
+  }
+  
+  if (!liveName || liveName.length > 20) {
+    showToast("ライブ名は1〜20文字で入力してください", true);
+    return;
+  }
+  
+  // パスワード強度チェック（非編集モードの場合のみ）
+  if (!isEditMode) {
+    const password = document.getElementById('password').value;
+    if (!password || password.length < 4) {
+      showToast("パスワードは4文字以上で入力してください", true);
+      return;
+    }
+  }
+  
+  try {
+    if (isEditMode) {
+  const projectId = document.getElementById('projectId').value;
+  await updateDoc(doc(db, "projects", projectId), {
+    songName,
+    creatorName,
+    liveName,
+    instruments,
+    updatedAt: serverTimestamp()
+  });
+  showToast("バンドを更新しました");
+} else {
+  const password = document.getElementById('password').value;
+  const hashedPassword = await hashPassword(password);
+  await addDoc(collection(db, "projects"), {
+    songName,
+    creatorName,
+    liveName,
+    instruments,
+    password: hashedPassword, // ハッシュ化したパスワードを保存
+    createdAt: serverTimestamp()
+  });
+  showToast("バンドを作成しました");
+}
+    closeModal('project-modal');
+    resetForm();
+  } catch (error) {
+    showToast("エラーが発生しました: " + error.message, true);
+    console.error("保存エラー:", error);
+  }
+});
       
       // トースト通知
       function showToast(message, isError = false) {
@@ -976,24 +1022,25 @@
 
       // ★ 修正：削除確認モーダルの「削除する」ボタン処理をDOM内に移動
       document.getElementById("confirm-delete").addEventListener("click", async () => {
-        if (!currentProjectIdForDeletion) return;
-        
-        const deletePasswordInput = document.getElementById("delete-password").value;
-        const projectDocRef = doc(db, "projects", currentProjectIdForDeletion);
-        const projectDoc = await getDoc(projectDocRef);
-        
-        if (projectDoc.exists()) {
-          const data = projectDoc.data();
-          if (deletePasswordInput === data.password) {
-            await deleteDoc(projectDocRef);
-            showToast("バンドを削除しました");
-            closeModal("delete-confirm-modal");
-            currentProjectIdForDeletion = null;
-          } else {
-            showToast("パスワードが違います", true);
-          }
-        }
-      });
+  if (!currentProjectIdForDeletion) return;
+  
+  const deletePasswordInput = document.getElementById("delete-password").value;
+  const hashedDeletePassword = await hashPassword(deletePasswordInput);
+  const projectDocRef = doc(db, "projects", currentProjectIdForDeletion);
+  const projectDoc = await getDoc(projectDocRef);
+  
+  if (projectDoc.exists()) {
+    const data = projectDoc.data();
+    if (hashedDeletePassword === data.password) {
+      await deleteDoc(projectDocRef);
+      showToast("バンドを削除しました");
+      closeModal("delete-confirm-modal");
+      currentProjectIdForDeletion = null;
+    } else {
+      showToast("パスワードが違います", true);
+    }
+  }
+});
     });
       
     // Firebase Auth: ログイン状態の監視
