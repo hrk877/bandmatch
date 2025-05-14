@@ -842,7 +842,7 @@
 
           document.getElementById('confirm-edit').onclick = async () => {
             const inputPassword = document.getElementById('edit-password').value;
-            if (inputPassword === data.password || inputPassword === "mizomizo877") {
+            if (inputPassword === data.password) {
               document.getElementById('isEditMode').value = "true";
               document.getElementById('projectId').value = id;
               document.getElementById('modal-title-text').textContent = "バンドを編集";
@@ -984,7 +984,7 @@
         
         if (projectDoc.exists()) {
           const data = projectDoc.data();
-          if (deletePasswordInput === data.password || deletePasswordInput === "mizomizo877") {
+          if (deletePasswordInput === data.password) {
             await deleteDoc(projectDocRef);
             showToast("バンドを削除しました");
             closeModal("delete-confirm-modal");
